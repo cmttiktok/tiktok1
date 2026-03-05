@@ -1,7 +1,6 @@
 {
-  "name": "tiktok-live-reader",
+  "name": "tiktok-live-247",
   "version": "1.0.0",
-  "description": "TikTok Live Chat Reader",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
