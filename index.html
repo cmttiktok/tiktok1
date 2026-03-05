@@ -2,98 +2,118 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS Dashboard - Private DB</title>
+    <title>Hệ Thống Livestream Thông Minh</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --main: #fe2c55; --glass: rgba(255, 255, 255, 0.1); }
-        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; gap: 15px; }
-        .card { background: var(--glass); backdrop-filter: blur(15px); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
-        .control-panel { flex: 1; } .data-panel { flex: 1.5; }
-        input, button { padding: 12px; border-radius: 10px; border: none; margin: 5px 0; width: 100%; box-sizing: border-box; font-size: 14px; }
-        input { background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #333; }
+        :root { --main: #fe2c55; --bg: #0f0f0f; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; gap: 15px; }
+        .panel { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 15px; border: 1px solid #333; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .left { flex: 1; border-left: 4px solid var(--main); }
+        .right { flex: 2; }
+        input, button, select { padding: 12px; border-radius: 8px; border: none; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        input { background: #1a1a1a; color: #fff; border: 1px solid #333; }
         button { background: var(--main); color: #fff; font-weight: bold; cursor: pointer; }
-        .scroll-list { flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin-top: 10px; }
-        .msg { padding: 8px; border-bottom: 1px solid #333; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-        .label { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #444; margin-right: 5px; }
+        .scroll { flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin-top: 10px; }
+        .msg { padding: 8px; border-bottom: 1px solid #222; font-size: 14px; display: flex; justify-content: space-between; }
+        .toggle-box { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
+        .tab-btn { background: #333; width: auto; padding: 8px 15px; margin-right: 5px; }
+        .active-tab { background: var(--main); }
     </style>
 </head>
 <body>
-    <div class="card control-panel">
-        <h3 style="margin-top:0">🎮 ĐIỀU KHIỂN LIVE</h3>
+    <div class="panel left">
+        <h3 style="margin-top:0">🎮 ĐIỀU KHIỂN</h3>
         <button id="vBtn" onclick="toggleV()" style="background:#444">🔇 GIỌNG ĐỌC: TẮT</button>
         <input type="text" id="host" placeholder="Nhập ID TikTok...">
         <button onclick="conn()">KẾT NỐI</button>
-        <div id="status" style="font-size:12px; color:#00f2ea; margin:5px">Sẵn sàng...</div>
-        <div class="scroll-list" id="chat-box"></div>
+        
+        <div class="toggle-box">
+            <label><input type="checkbox" id="cWelcome" checked> Chào khách</label><br>
+            <label><input type="checkbox" id="cGift" checked> Cảm ơn quà</label><br>
+            <label><input type="checkbox" id="cPK" checked> Nhắc PK</label>
+        </div>
+        
+        <div class="scroll" id="chat-box"></div>
     </div>
 
-    <div class="card data-panel">
-        <h3 style="margin-top:0">📁 QUẢN TRỊ CSDL</h3>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="wIn" placeholder="Thêm từ cấm mới...">
-            <button style="width:80px" onclick="addW()">LƯU</button>
+    <div class="panel right">
+        <h3 style="margin-top:0">🛠️ CẤU HÌNH HỆ THỐNG</h3>
+        <div style="display:flex">
+            <button class="tab-btn active-tab" onclick="showTab('word')">Từ cấm</button>
+            <button class="tab-btn" onclick="showTab('bot')">Trợ lý ảo</button>
         </div>
-        <div class="scroll-list" id="db-list"></div>
+
+        <div id="word-ui" class="tab-content">
+            <div style="display:flex; gap:5px">
+                <input type="text" id="wIn" placeholder="Thêm từ cấm...">
+                <button style="width:80px" onclick="add('word')">LƯU</button>
+            </div>
+        </div>
+
+        <div id="bot-ui" class="tab-content" style="display:none">
+            <input type="text" id="botK" placeholder="Từ khóa khách hỏi...">
+            <input type="text" id="botR" placeholder="Bot trả lời...">
+            <button onclick="add('bot')">THÊM KỊCH BẢN</button>
+        </div>
+
+        <div class="scroll" id="data-list"></div>
     </div>
 
     <script>
         const socket = io();
-        let queue = [], isPlaying = false, isVoiceOn = false;
+        let q = [], playing = false, voice = false;
 
         function toggleV() {
-            isVoiceOn = !isVoiceOn;
-            const btn = document.getElementById('vBtn');
-            btn.innerText = isVoiceOn ? "🔊 GIỌNG ĐỌC: BẬT" : "🔇 GIỌNG ĐỌC: TẮT";
-            btn.style.background = isVoiceOn ? "#fe2c55" : "#444";
-            if(isVoiceOn) new Audio().play();
+            voice = !voice;
+            document.getElementById('vBtn').innerText = voice ? "🔊 GIỌNG ĐỌC: BẬT" : "🔇 GIỌNG ĐỌC: TẮT";
+            document.getElementById('vBtn').style.background = voice ? "#00f2ea" : "#444";
+            if(voice) new Audio().play();
         }
 
         function conn() { socket.emit('set-host', document.getElementById('host').value); }
 
-        async function addW() {
-            const word = document.getElementById('wIn').value;
-            if(!word) return;
-            await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type: 'word', payload: {word}}) });
-            document.getElementById('wIn').value = ''; 
-            loadSettings();
+        async function add(type) {
+            let payload;
+            if(type==='word') payload = document.getElementById('wIn').value;
+            if(type==='bot') payload = {k: document.getElementById('botK').value, r: document.getElementById('botR').value};
+            
+            await fetch('/api/update', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type, payload}) });
+            loadData();
         }
 
-        async function del(col, id) { 
-            await fetch(`/api/${col}/${id}`, { method: 'DELETE' }); 
-            loadSettings(); 
-        }
+        async function del(col, id) { await fetch(`/api/${col}/${id}`, { method: 'DELETE' }); loadData(); }
 
-        async function loadSettings() {
-            const res = await (await fetch('/api/settings')).json();
-            document.getElementById('db-list').innerHTML = res.words.map(w => `
-                <div class="msg">
-                    <span><span class="label">CẤM</span> ${w.word}</span>
-                    <span style="color:red; cursor:pointer; font-weight:bold" onclick="del('word','${w._id}')">XÓA</span>
-                </div>
-            `).join('');
+        async function loadData() {
+            const res = await (await fetch('/api/data')).json();
+            const list = document.getElementById('data-list');
+            list.innerHTML = res.words.map(w => `<div class="msg"><span>🚫 ${w.word}</span> <span style="color:red;cursor:pointer" onclick="del('word','${w._id}')">Xóa</span></div>`).join('');
         }
 
         function play() {
-            if (!queue.length) { isPlaying = false; return; }
-            isPlaying = true; 
-            const audio = new Audio(queue.shift());
-            audio.onended = () => setTimeout(play, 300);
-            audio.play().catch(() => { isPlaying = false; play(); });
+            if (!q.length) { playing = false; return; }
+            playing = true; const a = new Audio(q.shift());
+            a.onended = () => setTimeout(play, 200); a.play().catch(() => play());
         }
 
-        socket.on('voice-event', d => {
+        socket.on('event', d => {
+            if (d.type === 'welcome' && !document.getElementById('cWelcome').checked) return;
+            if (d.type === 'gift' && !document.getElementById('cGift').checked) return;
+            if (d.type === 'pk' && !document.getElementById('cPK').checked) return;
+
             const div = document.createElement('div');
             div.className = 'msg';
             div.innerHTML = `<span><b>${d.user}:</b> ${d.msg}</span>`;
             document.getElementById('chat-box').prepend(div);
-            if (isVoiceOn && d.audio) {
-                queue.push(d.audio);
-                if (!isPlaying) play();
-            }
+
+            if (voice && d.audio) { q.push(d.audio); if (!playing) play(); }
         });
 
-        socket.on('status', s => document.getElementById('status').innerText = s);
-        loadSettings();
+        function showTab(t) {
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById(t+'-ui').style.display = 'block';
+        }
+
+        loadData();
     </script>
 </body>
 </html>
