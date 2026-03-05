@@ -2,29 +2,26 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Viết cho tháng ngày bên nhau - Google Voice Server</title>
+    <title>TikTok Reader - Fix Voice</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .glass { 
-            width: 100%; max-width: 450px; background: rgba(255,255,255,0.1); 
-            backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .voice-btn { width: 100%; margin-bottom: 15px; padding: 12px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; background: #444; color: #fff; }
+        .glass { width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-toggle { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; margin-bottom: 15px; background: #444; color: #fff; }
         .active { background: #00f2ea; color: #000; }
-        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .input-group { display: flex; gap: 8px; margin-bottom: 15px; }
         input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #222; color: #fff; }
-        button#conn { background: #fe2c55; color: #fff; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; }
+        button#conn { background: #fe2c55; color: #fff; border: none; padding: 0 15px; border-radius: 10px; cursor: pointer; }
         #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; }
         .item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border-left: 3px solid #fe2c55; }
-        .u { color: #00f2ea; font-weight: bold; font-size: 0.9em; }
+        .u { color: #00f2ea; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="glass">
-        <button id="btnVoice" class="voice-btn" onclick="toggleVoice()">🔇 CHẾ ĐỘ CHỊ GOOGLE: TẮT</button>
-        <div class="controls">
-            <input type="text" id="id" placeholder="Nhập ID TikTok...">
+        <button id="btnVoice" class="btn-toggle" onclick="toggleVoice()">🔇 GIỌNG ĐỌC: ĐANG TẮT</button>
+        <div class="input-group">
+            <input type="text" id="id" placeholder="ID TikTok...">
             <button id="conn" onclick="conn()">Kết nối</button>
         </div>
         <div id="chat"></div>
@@ -36,39 +33,55 @@
         const audioQueue = [];
         let isPlaying = false;
 
+        // Phải tương tác với trang web trước khi phát âm thanh
         function toggleVoice() {
             isVoiceEnabled = !isVoiceEnabled;
             const btn = document.getElementById('btnVoice');
-            btn.innerText = isVoiceEnabled ? "🔊 CHẾ ĐỘ CHỊ GOOGLE: BẬT" : "🔇 CHẾ ĐỘ CHỊ GOOGLE: TẮT";
+            btn.innerText = isVoiceEnabled ? "🔊 GIỌNG ĐỌC: ĐANG BẬT" : "🔇 GIỌNG ĐỌC: ĐANG TẮT";
             btn.classList.toggle('active', isVoiceEnabled);
+            
+            if(isVoiceEnabled) {
+                // Phát một âm thanh trống để "xin phép" trình duyệt
+                const silent = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
+                silent.play();
+            }
         }
 
-        function conn() { socket.emit('set-host', document.getElementById('id').value); }
+        function conn() { 
+            const id = document.getElementById('id').value;
+            if(id) socket.emit('set-host', id); 
+        }
 
-        // Hàm phát âm thanh theo thứ tự (không bị đè lên nhau)
         function playNext() {
-            if (audioQueue.length === 0 || isPlaying) return;
+            if (audioQueue.length === 0 || isPlaying || !isVoiceEnabled) return;
             
             isPlaying = true;
             const audio = new Audio(audioQueue.shift());
+            
             audio.onended = () => {
+                isPlaying = false;
+                setTimeout(playNext, 200); // Nghỉ 0.2s giữa các comment
+            };
+
+            audio.onerror = () => {
+                console.log("Lỗi tải âm thanh Google, bỏ qua...");
                 isPlaying = false;
                 playNext();
             };
-            audio.play().catch(() => {
+
+            audio.play().catch(e => {
+                console.log("Trình duyệt chặn phát:", e);
                 isPlaying = false;
                 playNext();
             });
         }
 
         socket.on('new-comment', d => {
-            // Hiện comment
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `<span class="u">${d.user}:</span> ${d.msg}`;
             document.getElementById('chat').prepend(div);
 
-            // Cho âm thanh vào hàng đợi để đọc lần lượt
             if (isVoiceEnabled && d.audio) {
                 audioQueue.push(d.audio);
                 playNext();
