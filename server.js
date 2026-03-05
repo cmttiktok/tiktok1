@@ -19,18 +19,14 @@ io.on('connection', (socket) => {
         const cleanId = hostId.startsWith('@') ? hostId.substring(1) : hostId;
         tiktok = new WebcastPushConnection(cleanId);
         
-        tiktok.connect().then(() => socket.emit('status', `Đang kết nối: ${cleanId}`))
-            .catch(() => socket.emit('error', 'Không tìm thấy Live'));
+        tiktok.connect().then(() => socket.emit('status', `Đã kết nối: ${cleanId}`))
+            .catch(() => socket.emit('error', 'Không tìm thấy livestream!'));
         
         tiktok.on('chat', (data) => {
-            // Sử dụng link tts thay thế nếu link translate bị chặn
-            const text = encodeURIComponent(`${data.nickname} nói ${data.comment}`);
-            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${text}&tl=vi&client=tw-ob`;
-
+            // Chỉ gửi text về, client sẽ tự tạo giọng đọc
             io.emit('new-comment', { 
                 user: data.nickname, 
-                msg: data.comment,
-                audio: audioUrl 
+                msg: data.comment 
             });
         });
     });
@@ -38,4 +34,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running` ));
+server.listen(PORT, () => console.log('Server is running...'));
