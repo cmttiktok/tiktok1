@@ -1,135 +1,38 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Live Chat Reader - Tunna</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <title>Viết cho tháng ngày bên nhau</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* Giao diện tối hiện đại (Glassmorphism nhẹ) */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #000; 
-            color: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 20px;
-            margin: 0;
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .glass { 
+            width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);
         }
-        .container { 
-            width: 100%; 
-            max-width: 500px; 
-            background: rgba(255, 255, 255, 0.05); 
-            backdrop-filter: blur(10px);
-            padding: 20px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8); 
-        }
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        input { 
-            flex: 1;
-            padding: 12px; 
-            border-radius: 10px; 
-            border: none; 
-            background: #222;
-            color: white;
-            outline: none;
-        }
-        button { 
-            padding: 12px 20px; 
-            border-radius: 10px; 
-            border: none; 
-            background: #fe2c55; 
-            color: white; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.3s;
-        }
-        button:hover { background: #ef2950; }
-        
-        #chat-box { 
-            height: 500px; 
-            overflow-y: auto; 
-            margin-top: 20px; 
-            display: flex; 
-            flex-direction: column-reverse; 
-            gap: 10px;
-            padding-right: 5px;
-        }
-        /* Tùy chỉnh thanh cuộn */
-        #chat-box::-webkit-scrollbar { width: 5px; }
-        #chat-box::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-
-        .comment { 
-            background: rgba(255, 255, 255, 0.08); 
-            padding: 12px; 
-            border-radius: 15px; 
-            animation: fadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
-        .user { color: #00f2ea; font-weight: bold; font-size: 0.9em; margin-bottom: 3px; }
-        .text { font-size: 1em; line-height: 1.4; color: #ddd; }
-        
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(20px) scale(0.9); } 
-            to { opacity: 1; transform: translateY(0) scale(1); } 
-        }
-        #status { font-size: 0.85em; color: #888; margin-bottom: 15px; }
+        input { width: 70%; padding: 10px; border-radius: 10px; border: none; background: #222; color: #fff; }
+        button { padding: 10px; border-radius: 10px; background: #fe2c55; color: #fff; border: none; cursor: pointer; }
+        #chat { height: 400px; overflow-y: auto; margin-top: 20px; display: flex; flex-direction: column-reverse; }
+        .item { background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 10px; border-radius: 10px; font-size: 14px; }
+        .u { color: #00f2ea; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <h2 style="margin-top: 0;">TikTok Live Chat</h2>
-        <div id="status">Trạng thái: Chưa kết nối</div>
-        
-        <div class="input-group">
-            <input type="text" id="username" placeholder="Nhập ID TikTok (VD: @tiktok)">
-            <button onclick="connect()">Kết nối</button>
-        </div>
-
-        <div id="chat-box"></div>
+    <div class="glass">
+        <h3>TikTok Live Reader</h3>
+        <input type="text" id="id" placeholder="Nhập ID...">
+        <button onclick="conn()">Kết nối</button>
+        <div id="chat"></div>
     </div>
-
     <script>
-        // Link Render của bạn đã được cập nhật tại đây
-        const RENDER_URL = "https://cmt-tiktok.onrender.com"; 
-        const socket = io(RENDER_URL);
-
-        function connect() {
-            const user = document.getElementById('username').value.trim();
-            if(!user) return alert("Vui lòng nhập ID TikTok!");
-            
-            socket.emit('set-host', user);
-            document.getElementById('status').innerText = "Trạng thái: Đang kết nối tới " + user + "...";
-            document.getElementById('status').style.color = "#ffaa00";
-        }
-
-        socket.on('status', (msg) => {
-            document.getElementById('status').innerText = "Trạng thái: " + msg;
-            document.getElementById('status').style.color = "#00ff00";
-        });
-
-        socket.on('new-comment', (data) => {
-            const chatBox = document.getElementById('chat-box');
+        const socket = io();
+        function conn() { socket.emit('set-host', document.getElementById('id').value); }
+        socket.on('new-comment', d => {
             const div = document.createElement('div');
-            div.className = 'comment';
-            div.innerHTML = `
-                <div class="user">${data.nickname} (@${data.uniqueId})</div>
-                <div class="text">${data.comment}</div>
-            `;
-            chatBox.prepend(div);
-        });
-
-        socket.on('error', (msg) => {
-            alert(msg);
-            document.getElementById('status').innerText = "Trạng thái: Lỗi kết nối";
-            document.getElementById('status').style.color = "#fe2c55";
+            div.className = 'item';
+            div.innerHTML = `<span class="u">${d.user}:</span> ${d.msg}`;
+            document.getElementById('chat').prepend(div);
         });
     </script>
 </body>
