@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viết cho tháng ngày bên nhau</title>
+    <title>Viết cho tháng ngày bên nhau - Auto Voice</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
@@ -11,29 +11,77 @@
             width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); 
             backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);
         }
-        input { width: 70%; padding: 10px; border-radius: 10px; border: none; background: #222; color: #fff; }
+        .controls { display: flex; gap: 8px; margin-bottom: 10px; }
+        input { flex: 1; padding: 10px; border-radius: 10px; border: none; background: #222; color: #fff; }
         button { padding: 10px; border-radius: 10px; background: #fe2c55; color: #fff; border: none; cursor: pointer; }
-        #chat { height: 400px; overflow-y: auto; margin-top: 20px; display: flex; flex-direction: column-reverse; }
-        .item { background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 10px; border-radius: 10px; font-size: 14px; }
+        .voice-toggle { background: #555; margin-bottom: 15px; width: 100%; }
+        .voice-on { background: #00f2ea; color: #000; }
+        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+        .item { background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 10px; border-radius: 10px; font-size: 14px; border-left: 3px solid #fe2c55; }
         .u { color: #00f2ea; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="glass">
-        <h3>TikTok Live Reader</h3>
-        <input type="text" id="id" placeholder="Nhập ID...">
-        <button onclick="conn()">Kết nối</button>
+        <h3 style="margin-top:0">TikTok Live Reader</h3>
+        
+        <button id="btnVoice" class="voice-toggle" onclick="toggleVoice()">Bật giọng đọc: ĐANG TẮT</button>
+
+        <div class="controls">
+            <input type="text" id="id" placeholder="Nhập ID TikTok...">
+            <button onclick="conn()">Kết nối</button>
+        </div>
+        
         <div id="chat"></div>
     </div>
+
     <script>
         const socket = io();
-        function conn() { socket.emit('set-host', document.getElementById('id').value); }
+        let isVoiceEnabled = false;
+
+        function toggleVoice() {
+            isVoiceEnabled = !isVoiceEnabled;
+            const btn = document.getElementById('btnVoice');
+            btn.innerText = isVoiceEnabled ? "Bật giọng đọc: ĐANG BẬT" : "Bật giọng đọc: ĐANG TẮT";
+            btn.className = isVoiceEnabled ? "voice-toggle voice-on" : "voice-toggle";
+            
+            // Kích hoạt âm thanh (trình duyệt yêu cầu tương tác người dùng)
+            if(isVoiceEnabled) {
+                const msg = new SpeechSynthesisUtterance("Đã bật chế độ đọc comment");
+                msg.lang = 'vi-VN';
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function conn() { 
+            socket.emit('set-host', document.getElementById('id').value); 
+        }
+
+        function speak(text) {
+            if (!isVoiceEnabled) return;
+            
+            // Dừng các giọng đọc đang chờ để không bị dồn toa quá lâu
+            window.speechSynthesis.cancel(); 
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'vi-VN'; // Giọng tiếng Việt
+            utterance.pitch = 1;      // Độ cao
+            utterance.rate = 1.1;     // Tốc độ đọc nhanh hơn chút cho tự nhiên
+            window.speechSynthesis.speak(utterance);
+        }
+
         socket.on('new-comment', d => {
+            // Hiển thị lên màn hình
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `<span class="u">${d.user}:</span> ${d.msg}`;
             document.getElementById('chat').prepend(div);
+
+            // Đọc comment: "Tên người dùng nói: nội dung"
+            speak(`${d.user} nói: ${d.msg}`);
         });
+
+        socket.on('error', e => alert(e));
     </script>
 </body>
 </html>
