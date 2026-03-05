@@ -2,56 +2,36 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const cors = require('cors');
+const path = require('path');
 
 const app = express();
-app.use(cors());
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
-// Giúp fix lỗi "Cannot GET /"
+// Phục vụ giao diện
 app.get('/', (req, res) => {
-    res.send('Server TikTok Live đang hoạt động ổn định!');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*", 
-        methods: ["GET", "POST"]
-    }
+// Endpoint dành riêng cho Cron-job để giữ server thức
+app.get('/ping', (req, res) => {
+    res.send('Pong! Server đang thức.');
 });
 
 io.on('connection', (socket) => {
-    let tiktokConnection;
-
+    let tiktok;
     socket.on('set-host', (hostId) => {
-        if (tiktokConnection) {
-            tiktokConnection.disconnect();
-        }
-
-        tiktokConnection = new WebcastPushConnection(hostId);
-
-        tiktokConnection.connect().then(state => {
-            console.log(`Connected to: ${state.roomId}`);
-            socket.emit('status', `Đã kết nối tới: ${hostId}`);
-        }).catch(err => {
-            socket.emit('error', 'Không tìm thấy Live. Hãy kiểm tra lại ID!');
-        });
-
-        tiktokConnection.on('chat', (data) => {
-            io.emit('new-comment', {
-                uniqueId: data.uniqueId,
-                nickname: data.nickname,
-                comment: data.comment
-            });
+        if (tiktok) tiktok.disconnect();
+        tiktok = new WebcastPushConnection(hostId);
+        tiktok.connect().then(() => socket.emit('status', `Đang đọc Live: ${hostId}`))
+            .catch(() => socket.emit('error', 'Lỗi kết nối TikTok'));
+        
+        tiktok.on('chat', (data) => {
+            io.emit('new-comment', { user: data.nickname, msg: data.comment });
         });
     });
-
-    socket.on('disconnect', () => {
-        if (tiktokConnection) tiktokConnection.disconnect();
-    });
+    socket.on('disconnect', () => { if(tiktok) tiktok.disconnect(); });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Live trên cổng ${PORT}`));
