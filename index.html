@@ -2,24 +2,25 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TikTok Reader - Fix Voice</title>
+    <title>TikTok Voice - Fix 100%</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .glass { width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-toggle { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; margin-bottom: 15px; background: #444; color: #fff; }
-        .active { background: #00f2ea; color: #000; }
-        .input-group { display: flex; gap: 8px; margin-bottom: 15px; }
-        input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #222; color: #fff; }
-        button#conn { background: #fe2c55; color: #fff; border: none; padding: 0 15px; border-radius: 10px; cursor: pointer; }
-        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; }
-        .item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border-left: 3px solid #fe2c55; }
-        .u { color: #00f2ea; font-weight: bold; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .glass { width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-toggle { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; background: #444; color: #fff; }
+        .active { background: #00f2ea; color: #000; box-shadow: 0 0 15px #00f2ea; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #222; color: #fff; outline: none; }
+        button#conn { background: #fe2c55; color: #fff; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 10px; }
+        .item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid #fe2c55; animation: slideIn 0.3s ease; }
+        .u { color: #00f2ea; font-weight: bold; font-size: 0.9em; margin-bottom: 4px; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body>
     <div class="glass">
-        <button id="btnVoice" class="btn-toggle" onclick="toggleVoice()">🔇 GIỌNG ĐỌC: ĐANG TẮT</button>
+        <button id="btnVoice" class="btn-toggle" onclick="toggleVoice()">🔇 CHỊ GOOGLE: ĐANG TẮT</button>
         <div class="input-group">
             <input type="text" id="id" placeholder="ID TikTok...">
             <button id="conn" onclick="conn()">Kết nối</button>
@@ -33,17 +34,16 @@
         const audioQueue = [];
         let isPlaying = false;
 
-        // Phải tương tác với trang web trước khi phát âm thanh
         function toggleVoice() {
             isVoiceEnabled = !isVoiceEnabled;
             const btn = document.getElementById('btnVoice');
-            btn.innerText = isVoiceEnabled ? "🔊 GIỌNG ĐỌC: ĐANG BẬT" : "🔇 GIỌNG ĐỌC: ĐANG TẮT";
+            btn.innerText = isVoiceEnabled ? "🔊 CHỊ GOOGLE: ĐANG BẬT" : "🔇 CHỊ GOOGLE: ĐANG TẮT";
             btn.classList.toggle('active', isVoiceEnabled);
             
+            // Kích hoạt trình duyệt phát âm thanh
             if(isVoiceEnabled) {
-                // Phát một âm thanh trống để "xin phép" trình duyệt
-                const silent = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-                silent.play();
+                const welcome = new Audio("https://translate.google.com/translate_tts?ie=UTF-8&q=Đã%20bật%20giọng%20đọc&tl=vi&client=tw-ob");
+                welcome.play();
             }
         }
 
@@ -56,21 +56,20 @@
             if (audioQueue.length === 0 || isPlaying || !isVoiceEnabled) return;
             
             isPlaying = true;
-            const audio = new Audio(audioQueue.shift());
+            const text = audioQueue.shift();
+            // TẠO LINK AUDIO TRỰC TIẾP TẠI TRÌNH DUYỆT
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`;
             
+            const audio = new Audio(url);
             audio.onended = () => {
                 isPlaying = false;
-                setTimeout(playNext, 200); // Nghỉ 0.2s giữa các comment
+                setTimeout(playNext, 100);
             };
-
             audio.onerror = () => {
-                console.log("Lỗi tải âm thanh Google, bỏ qua...");
                 isPlaying = false;
                 playNext();
             };
-
-            audio.play().catch(e => {
-                console.log("Trình duyệt chặn phát:", e);
+            audio.play().catch(() => {
                 isPlaying = false;
                 playNext();
             });
@@ -79,14 +78,17 @@
         socket.on('new-comment', d => {
             const div = document.createElement('div');
             div.className = 'item';
-            div.innerHTML = `<span class="u">${d.user}:</span> ${d.msg}`;
+            div.innerHTML = `<div class="u">${d.user}</div><div>${d.msg}</div>`;
             document.getElementById('chat').prepend(div);
 
-            if (isVoiceEnabled && d.audio) {
-                audioQueue.push(d.audio);
+            if (isVoiceEnabled) {
+                audioQueue.push(`${d.user} nói: ${d.msg}`);
                 playNext();
             }
         });
+
+        socket.on('error', e => alert(e));
+        socket.on('status', s => console.log(s));
     </script>
 </body>
 </html>
