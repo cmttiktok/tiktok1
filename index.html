@@ -2,61 +2,98 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Viết cho tháng ngày bên nhau - Server Voice</title>
+    <title>TTS Dashboard - Private DB</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .glass { width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-toggle { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; margin-bottom: 20px; background: #444; color: #fff; }
-        .active { background: #fe2c55; color: #fff; box-shadow: 0 0 10px #fe2c55; }
-        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; }
-        .item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border-left: 3px solid #fe2c55; }
+        :root { --main: #fe2c55; --glass: rgba(255, 255, 255, 0.1); }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; gap: 15px; }
+        .card { background: var(--glass); backdrop-filter: blur(15px); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .control-panel { flex: 1; } .data-panel { flex: 1.5; }
+        input, button { padding: 12px; border-radius: 10px; border: none; margin: 5px 0; width: 100%; box-sizing: border-box; font-size: 14px; }
+        input { background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #333; }
+        button { background: var(--main); color: #fff; font-weight: bold; cursor: pointer; }
+        .scroll-list { flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin-top: 10px; }
+        .msg { padding: 8px; border-bottom: 1px solid #333; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .label { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #444; margin-right: 5px; }
     </style>
 </head>
 <body>
-    <div class="glass">
-        <button id="btnVoice" class="btn-toggle" onclick="toggleVoice()">🔇 GIỌNG ĐỌC: TẮT</button>
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <input type="text" id="id" placeholder="ID TikTok..." style="flex:1; padding:10px; border-radius:10px; border:none; background:#222; color:#fff;">
-            <button onclick="conn()" style="background:#fe2c55; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;">Kết nối</button>
+    <div class="card control-panel">
+        <h3 style="margin-top:0">🎮 ĐIỀU KHIỂN LIVE</h3>
+        <button id="vBtn" onclick="toggleV()" style="background:#444">🔇 GIỌNG ĐỌC: TẮT</button>
+        <input type="text" id="host" placeholder="Nhập ID TikTok...">
+        <button onclick="conn()">KẾT NỐI</button>
+        <div id="status" style="font-size:12px; color:#00f2ea; margin:5px">Sẵn sàng...</div>
+        <div class="scroll-list" id="chat-box"></div>
+    </div>
+
+    <div class="card data-panel">
+        <h3 style="margin-top:0">📁 QUẢN TRỊ CSDL</h3>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="wIn" placeholder="Thêm từ cấm mới...">
+            <button style="width:80px" onclick="addW()">LƯU</button>
         </div>
-        <div id="chat"></div>
+        <div class="scroll-list" id="db-list"></div>
     </div>
 
     <script>
         const socket = io();
-        let isVoiceEnabled = false;
-        let queue = [], playing = false;
+        let queue = [], isPlaying = false, isVoiceOn = false;
 
-        function toggleVoice() {
-            isVoiceEnabled = !isVoiceEnabled;
-            const btn = document.getElementById('btnVoice');
-            btn.innerText = isVoiceEnabled ? "🔊 GIỌNG ĐỌC: BẬT" : "🔇 GIỌNG ĐỌC: TẮT";
-            btn.classList.toggle('active', isVoiceEnabled);
-            if(isVoiceEnabled) new Audio().play(); // Kích hoạt âm thanh trình duyệt
+        function toggleV() {
+            isVoiceOn = !isVoiceOn;
+            const btn = document.getElementById('vBtn');
+            btn.innerText = isVoiceOn ? "🔊 GIỌNG ĐỌC: BẬT" : "🔇 GIỌNG ĐỌC: TẮT";
+            btn.style.background = isVoiceOn ? "#fe2c55" : "#444";
+            if(isVoiceOn) new Audio().play();
         }
 
-        function conn() { socket.emit('set-host', document.getElementById('id').value); }
+        function conn() { socket.emit('set-host', document.getElementById('host').value); }
+
+        async function addW() {
+            const word = document.getElementById('wIn').value;
+            if(!word) return;
+            await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type: 'word', payload: {word}}) });
+            document.getElementById('wIn').value = ''; 
+            loadSettings();
+        }
+
+        async function del(col, id) { 
+            await fetch(`/api/${col}/${id}`, { method: 'DELETE' }); 
+            loadSettings(); 
+        }
+
+        async function loadSettings() {
+            const res = await (await fetch('/api/settings')).json();
+            document.getElementById('db-list').innerHTML = res.words.map(w => `
+                <div class="msg">
+                    <span><span class="label">CẤM</span> ${w.word}</span>
+                    <span style="color:red; cursor:pointer; font-weight:bold" onclick="del('word','${w._id}')">XÓA</span>
+                </div>
+            `).join('');
+        }
 
         function play() {
-            if (!queue.length) { playing = false; return; }
-            playing = true;
-            const a = new Audio(queue.shift()); // Phát chuỗi âm thanh nhận từ server
-            a.onended = () => setTimeout(play, 300);
-            a.play().catch(() => play());
+            if (!queue.length) { isPlaying = false; return; }
+            isPlaying = true; 
+            const audio = new Audio(queue.shift());
+            audio.onended = () => setTimeout(play, 300);
+            audio.play().catch(() => { isPlaying = false; play(); });
         }
 
-        socket.on('new-comment', d => {
+        socket.on('voice-event', d => {
             const div = document.createElement('div');
-            div.className = 'item';
-            div.innerHTML = `<b style="color:#00f2ea">${d.user}:</b> ${d.msg}`;
-            document.getElementById('chat').prepend(div);
-
-            if (isVoiceEnabled && d.audio) {
-                queue.push(d.audio); // Thêm âm thanh vào hàng đợi
-                if (!playing) play();
+            div.className = 'msg';
+            div.innerHTML = `<span><b>${d.user}:</b> ${d.msg}</span>`;
+            document.getElementById('chat-box').prepend(div);
+            if (isVoiceOn && d.audio) {
+                queue.push(d.audio);
+                if (!isPlaying) play();
             }
         });
+
+        socket.on('status', s => document.getElementById('status').innerText = s);
+        loadSettings();
     </script>
 </body>
 </html>
