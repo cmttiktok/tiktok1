@@ -2,103 +2,78 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Live Reader - Chuẩn Giọng Việt</title>
+    <title>Viết cho tháng ngày bên nhau - Google Voice Server</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
         .glass { 
-            width: 100%; max-width: 450px; background: rgba(255,255,255,0.08); 
-            backdrop-filter: blur(15px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%; max-width: 450px; background: rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);
         }
-        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
-        input { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; outline: none; }
-        button { padding: 12px 20px; border-radius: 12px; background: #fe2c55; color: #fff; border: none; cursor: pointer; font-weight: bold; }
-        .voice-btn { width: 100%; margin-bottom: 15px; background: #444; transition: 0.3s; }
+        .voice-btn { width: 100%; margin-bottom: 15px; padding: 12px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; background: #444; color: #fff; }
         .active { background: #00f2ea; color: #000; }
-        #chat { height: 450px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 10px; }
-        .item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; border-left: 4px solid #fe2c55; animation: fadeIn 0.3s ease; }
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #222; color: #fff; }
+        button#conn { background: #fe2c55; color: #fff; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; }
+        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; }
+        .item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border-left: 3px solid #fe2c55; }
         .u { color: #00f2ea; font-weight: bold; font-size: 0.9em; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div class="glass">
-        <h3 style="margin-top:0; font-weight: 300;">TikTok Live Chat</h3>
-        
-        <button id="btnVoice" class="voice-btn" onclick="toggleVoice()">🔊 Bật giọng đọc: ĐANG TẮT</button>
-
+        <button id="btnVoice" class="voice-btn" onclick="toggleVoice()">🔇 CHẾ ĐỘ CHỊ GOOGLE: TẮT</button>
         <div class="controls">
             <input type="text" id="id" placeholder="Nhập ID TikTok...">
-            <button onclick="conn()">Kết nối</button>
+            <button id="conn" onclick="conn()">Kết nối</button>
         </div>
-        
         <div id="chat"></div>
     </div>
 
     <script>
         const socket = io();
         let isVoiceEnabled = false;
-        let vietnameseVoice = null;
-
-        // Hàm tìm giọng tiếng Việt chuẩn
-        function loadVoices() {
-            const voices = window.speechSynthesis.getVoices();
-            // Ưu tiên tìm giọng có chứa "Vietnamese" hoặc mã "vi-VN"
-            vietnameseVoice = voices.find(v => v.lang === 'vi-VN' || v.lang.includes('vi'));
-        }
-
-        // Trình duyệt cần thời gian để tải danh sách giọng
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
+        const audioQueue = [];
+        let isPlaying = false;
 
         function toggleVoice() {
             isVoiceEnabled = !isVoiceEnabled;
             const btn = document.getElementById('btnVoice');
-            btn.innerText = isVoiceEnabled ? "🔊 Giọng đọc: ĐANG BẬT" : "🔇 Giọng đọc: ĐANG TẮT";
+            btn.innerText = isVoiceEnabled ? "🔊 CHẾ ĐỘ CHỊ GOOGLE: BẬT" : "🔇 CHẾ ĐỘ CHỊ GOOGLE: TẮT";
             btn.classList.toggle('active', isVoiceEnabled);
-            
-            if(isVoiceEnabled) {
-                speak("Đã chuyển sang giọng chị Google tiếng Việt");
-            }
         }
 
-        function conn() { 
-            const user = document.getElementById('id').value.trim();
-            if(user) socket.emit('set-host', user); 
-        }
+        function conn() { socket.emit('set-host', document.getElementById('id').value); }
 
-        function speak(text) {
-            if (!isVoiceEnabled) return;
+        // Hàm phát âm thanh theo thứ tự (không bị đè lên nhau)
+        function playNext() {
+            if (audioQueue.length === 0 || isPlaying) return;
             
-            // Xóa hàng đợi cũ để đọc ngay comment mới nhất
-            window.speechSynthesis.cancel(); 
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            
-            if (vietnameseVoice) {
-                utterance.voice = vietnameseVoice;
-            }
-            utterance.lang = 'vi-VN';
-            utterance.rate = 1.0; 
-            utterance.pitch = 1.0;
-            
-            window.speechSynthesis.speak(utterance);
+            isPlaying = true;
+            const audio = new Audio(audioQueue.shift());
+            audio.onended = () => {
+                isPlaying = false;
+                playNext();
+            };
+            audio.play().catch(() => {
+                isPlaying = false;
+                playNext();
+            });
         }
 
         socket.on('new-comment', d => {
+            // Hiện comment
             const div = document.createElement('div');
             div.className = 'item';
-            div.innerHTML = `<div class="u">${d.user}</div><div>${d.msg}</div>`;
+            div.innerHTML = `<span class="u">${d.user}:</span> ${d.msg}`;
             document.getElementById('chat').prepend(div);
 
-            // Đọc nội dung comment
-            speak(`${d.user} nói: ${d.msg}`);
+            // Cho âm thanh vào hàng đợi để đọc lần lượt
+            if (isVoiceEnabled && d.audio) {
+                audioQueue.push(d.audio);
+                playNext();
+            }
         });
-
-        socket.on('status', s => console.log(s));
-        socket.on('error', e => alert("Lỗi: " + e));
     </script>
 </body>
 </html>
