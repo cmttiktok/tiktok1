@@ -2,28 +2,23 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TikTok Voice - Fix 100%</title>
+    <title>Viết cho tháng ngày bên nhau - Server Voice</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .glass { width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-toggle { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; background: #444; color: #fff; }
-        .active { background: #00f2ea; color: #000; box-shadow: 0 0 15px #00f2ea; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #222; color: #fff; outline: none; }
-        button#conn { background: #fe2c55; color: #fff; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 10px; }
-        .item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid #fe2c55; animation: slideIn 0.3s ease; }
-        .u { color: #00f2ea; font-weight: bold; font-size: 0.9em; margin-bottom: 4px; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .glass { width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-toggle { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; margin-bottom: 20px; background: #444; color: #fff; }
+        .active { background: #fe2c55; color: #fff; box-shadow: 0 0 10px #fe2c55; }
+        #chat { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; }
+        .item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border-left: 3px solid #fe2c55; }
     </style>
 </head>
 <body>
     <div class="glass">
-        <button id="btnVoice" class="btn-toggle" onclick="toggleVoice()">🔇 CHỊ GOOGLE: ĐANG TẮT</button>
-        <div class="input-group">
-            <input type="text" id="id" placeholder="ID TikTok...">
-            <button id="conn" onclick="conn()">Kết nối</button>
+        <button id="btnVoice" class="btn-toggle" onclick="toggleVoice()">🔇 GIỌNG ĐỌC: TẮT</button>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input type="text" id="id" placeholder="ID TikTok..." style="flex:1; padding:10px; border-radius:10px; border:none; background:#222; color:#fff;">
+            <button onclick="conn()" style="background:#fe2c55; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;">Kết nối</button>
         </div>
         <div id="chat"></div>
     </div>
@@ -31,64 +26,37 @@
     <script>
         const socket = io();
         let isVoiceEnabled = false;
-        const audioQueue = [];
-        let isPlaying = false;
+        let queue = [], playing = false;
 
         function toggleVoice() {
             isVoiceEnabled = !isVoiceEnabled;
             const btn = document.getElementById('btnVoice');
-            btn.innerText = isVoiceEnabled ? "🔊 CHỊ GOOGLE: ĐANG BẬT" : "🔇 CHỊ GOOGLE: ĐANG TẮT";
+            btn.innerText = isVoiceEnabled ? "🔊 GIỌNG ĐỌC: BẬT" : "🔇 GIỌNG ĐỌC: TẮT";
             btn.classList.toggle('active', isVoiceEnabled);
-            
-            // Kích hoạt trình duyệt phát âm thanh
-            if(isVoiceEnabled) {
-                const welcome = new Audio("https://translate.google.com/translate_tts?ie=UTF-8&q=Đã%20bật%20giọng%20đọc&tl=vi&client=tw-ob");
-                welcome.play();
-            }
+            if(isVoiceEnabled) new Audio().play(); // Kích hoạt âm thanh trình duyệt
         }
 
-        function conn() { 
-            const id = document.getElementById('id').value;
-            if(id) socket.emit('set-host', id); 
-        }
+        function conn() { socket.emit('set-host', document.getElementById('id').value); }
 
-        function playNext() {
-            if (audioQueue.length === 0 || isPlaying || !isVoiceEnabled) return;
-            
-            isPlaying = true;
-            const text = audioQueue.shift();
-            // TẠO LINK AUDIO TRỰC TIẾP TẠI TRÌNH DUYỆT
-            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`;
-            
-            const audio = new Audio(url);
-            audio.onended = () => {
-                isPlaying = false;
-                setTimeout(playNext, 100);
-            };
-            audio.onerror = () => {
-                isPlaying = false;
-                playNext();
-            };
-            audio.play().catch(() => {
-                isPlaying = false;
-                playNext();
-            });
+        function play() {
+            if (!queue.length) { playing = false; return; }
+            playing = true;
+            const a = new Audio(queue.shift()); // Phát chuỗi âm thanh nhận từ server
+            a.onended = () => setTimeout(play, 300);
+            a.play().catch(() => play());
         }
 
         socket.on('new-comment', d => {
             const div = document.createElement('div');
             div.className = 'item';
-            div.innerHTML = `<div class="u">${d.user}</div><div>${d.msg}</div>`;
+            div.innerHTML = `<b style="color:#00f2ea">${d.user}:</b> ${d.msg}`;
             document.getElementById('chat').prepend(div);
 
-            if (isVoiceEnabled) {
-                audioQueue.push(`${d.user} nói: ${d.msg}`);
-                playNext();
+            if (isVoiceEnabled && d.audio) {
+                queue.push(d.audio); // Thêm âm thanh vào hàng đợi
+                if (!playing) play();
             }
         });
-
-        socket.on('error', e => alert(e));
-        socket.on('status', s => console.log(s));
     </script>
 </body>
 </html>
