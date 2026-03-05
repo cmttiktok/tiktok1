@@ -5,12 +5,17 @@ const { WebcastPushConnection } = require('tiktok-live-connector');
 const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Cho phép kết nối từ bên ngoài
+app.use(cors());
+
+// Giúp fix lỗi "Cannot GET /"
+app.get('/', (req, res) => {
+    res.send('Server TikTok Live đang hoạt động ổn định!');
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Cho phép GitHub Pages truy cập
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -18,30 +23,25 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     let tiktokConnection;
 
-    // Lắng nghe sự kiện yêu cầu kết nối từ trình duyệt
     socket.on('set-host', (hostId) => {
         if (tiktokConnection) {
             tiktokConnection.disconnect();
         }
 
-        // Tạo kết nối mới tới TikTok
         tiktokConnection = new WebcastPushConnection(hostId);
 
         tiktokConnection.connect().then(state => {
-            console.log(`Đã kết nối tới Live ID: ${state.roomId}`);
+            console.log(`Connected to: ${state.roomId}`);
             socket.emit('status', `Đã kết nối tới: ${hostId}`);
         }).catch(err => {
-            console.error(err);
-            socket.emit('error', 'Không tìm thấy Livestream hoặc User này.');
+            socket.emit('error', 'Không tìm thấy Live. Hãy kiểm tra lại ID!');
         });
 
-        // Khi có comment mới, gửi ngay về trình duyệt qua Socket.io
         tiktokConnection.on('chat', (data) => {
             io.emit('new-comment', {
                 uniqueId: data.uniqueId,
                 nickname: data.nickname,
-                comment: data.comment,
-                profilePictureUrl: data.profilePictureUrl
+                comment: data.comment
             });
         });
     });
@@ -51,8 +51,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Render sẽ tự động cấp PORT, nếu không có thì chạy cổng 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server đang chạy tại port: ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
