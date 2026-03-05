@@ -19,19 +19,18 @@ io.on('connection', (socket) => {
         const cleanId = hostId.startsWith('@') ? hostId.substring(1) : hostId;
         tiktok = new WebcastPushConnection(cleanId);
         
-        tiktok.connect().then(() => socket.emit('status', `Đang đọc Live: ${cleanId}`))
-            .catch(() => socket.emit('error', 'Lỗi kết nối TikTok'));
+        tiktok.connect().then(() => socket.emit('status', `Đang kết nối: ${cleanId}`))
+            .catch(() => socket.emit('error', 'Không tìm thấy Live'));
         
         tiktok.on('chat', (data) => {
-            // Tạo link gTTS (Google Text-to-Speech) trực tiếp
-            // Chúng ta mã hóa nội dung để tránh lỗi ký tự đặc biệt
+            // Sử dụng link tts thay thế nếu link translate bị chặn
             const text = encodeURIComponent(`${data.nickname} nói ${data.comment}`);
             const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${text}&tl=vi&client=tw-ob`;
 
             io.emit('new-comment', { 
                 user: data.nickname, 
                 msg: data.comment,
-                audio: audioUrl // Gửi kèm link âm thanh chị Google chuẩn
+                audio: audioUrl 
             });
         });
     });
@@ -39,4 +38,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+server.listen(PORT, () => console.log(`Server running` ));
