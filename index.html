@@ -2,61 +2,84 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống Livestream Thông Minh</title>
+    <title>Dashboard Professional - Black Edition</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --main: #fe2c55; --bg: #0f0f0f; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; gap: 15px; }
-        .panel { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 15px; border: 1px solid #333; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
-        .left { flex: 1; border-left: 4px solid var(--main); }
-        .right { flex: 2; }
-        input, button, select { padding: 12px; border-radius: 8px; border: none; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        input { background: #1a1a1a; color: #fff; border: 1px solid #333; }
-        button { background: var(--main); color: #fff; font-weight: bold; cursor: pointer; }
-        .scroll { flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin-top: 10px; }
-        .msg { padding: 8px; border-bottom: 1px solid #222; font-size: 14px; display: flex; justify-content: space-between; }
-        .toggle-box { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
-        .tab-btn { background: #333; width: auto; padding: 8px 15px; margin-right: 5px; }
-        .active-tab { background: var(--main); }
+        :root { --accent: #fe2c55; --bg: #050505; --card: #121212; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; gap: 20px; }
+        
+        .panel { background: var(--card); border-radius: 20px; border: 1px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
+        .left { flex: 1; border-top: 4px solid var(--accent); }
+        .right { flex: 1.8; }
+        
+        .header { background: linear-gradient(to right, #1a1a1a, #121212); padding: 15px 20px; border-bottom: 1px solid #222; font-weight: bold; letter-spacing: 1px; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        
+        .content { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        input, select, button { background: #1a1a1a; border: 1px solid #333; color: white; padding: 12px 15px; border-radius: 10px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(254, 44, 85, 0.2); }
+        
+        button { background: var(--accent); cursor: pointer; border: none; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        button.secondary { background: #333; }
+        
+        .msg-card { background: #1a1a1a; padding: 12px; border-radius: 12px; border-left: 3px solid var(--accent); animation: slideIn 0.3s ease; display: flex; flex-direction: column; gap: 5px; }
+        .msg-header { font-size: 11px; color: #888; display: flex; justify-content: space-between; }
+        
+        .tab-bar { display: flex; gap: 10px; padding: 10px 20px; background: #0a0a0a; }
+        .tab { padding: 8px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; background: #1a1a1a; }
+        .tab.active { background: var(--accent); color: white; }
+        
+        .switch-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .switch-item { background: #1a1a1a; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
+
     <div class="panel left">
-        <h3 style="margin-top:0">🎮 ĐIỀU KHIỂN</h3>
-        <button id="vBtn" onclick="toggleV()" style="background:#444">🔇 GIỌNG ĐỌC: TẮT</button>
-        <input type="text" id="host" placeholder="Nhập ID TikTok...">
-        <button onclick="conn()">KẾT NỐI</button>
-        
-        <div class="toggle-box">
-            <label><input type="checkbox" id="cWelcome" checked> Chào khách</label><br>
-            <label><input type="checkbox" id="cGift" checked> Cảm ơn quà</label><br>
-            <label><input type="checkbox" id="cPK" checked> Nhắc PK</label>
+        <div class="header">CONTROLS <span id="stt" style="font-size:10px; color:#555">DISCONNECTED</span></div>
+        <div class="content">
+            <button id="vBtn" class="secondary" onclick="toggleV()">🔇 VOICE: OFF</button>
+            <div class="switch-group">
+                <div class="switch-item">Chào <input type="checkbox" id="cWelcome" checked></div>
+                <div class="switch-item">Quà <input type="checkbox" id="cGift" checked></div>
+                <div class="switch-item">Bot <input type="checkbox" id="cBot" checked></div>
+                <div class="switch-item">PK <input type="checkbox" id="cPK" checked></div>
+            </div>
+            <input type="text" id="host" placeholder="TikTok Username (e.g. garena)">
+            <button onclick="connect()">START ENGINE</button>
+            
+            <div class="content" id="chat-box" style="padding:0; margin-top:10px;"></div>
         </div>
-        
-        <div class="scroll" id="chat-box"></div>
     </div>
 
     <div class="panel right">
-        <h3 style="margin-top:0">🛠️ CẤU HÌNH HỆ THỐNG</h3>
-        <div style="display:flex">
-            <button class="tab-btn active-tab" onclick="showTab('word')">Từ cấm</button>
-            <button class="tab-btn" onclick="showTab('bot')">Trợ lý ảo</button>
+        <div class="header">DATABASE MANAGEMENT</div>
+        <div class="tab-bar">
+            <div class="tab active" onclick="setTab('word')">Từ Cấm</div>
+            <div class="tab" onclick="setTab('acr')">Viết Tắt</div>
+            <div class="tab" onclick="setTab('bot')">Trợ Lý</div>
         </div>
-
-        <div id="word-ui" class="tab-content">
-            <div style="display:flex; gap:5px">
-                <input type="text" id="wIn" placeholder="Thêm từ cấm...">
-                <button style="width:80px" onclick="add('word')">LƯU</button>
+        
+        <div class="content">
+            <div id="ui-word" class="ui-group">
+                <div style="display:flex; gap:10px">
+                    <input type="text" id="wIn" style="flex:1" placeholder="Nhập từ cần chặn...">
+                    <button onclick="add('word')">THÊM</button>
+                </div>
             </div>
+            <div id="ui-bot" class="ui-group" style="display:none">
+                <input type="text" id="botK" placeholder="Từ khóa khách hỏi...">
+                <input type="text" id="botR" placeholder="Nội dung bot trả lời...">
+                <button onclick="add('bot')">LƯU KỊCH BẢN</button>
+            </div>
+            
+            <div id="db-list" class="content" style="padding:0"></div>
         </div>
-
-        <div id="bot-ui" class="tab-content" style="display:none">
-            <input type="text" id="botK" placeholder="Từ khóa khách hỏi...">
-            <input type="text" id="botR" placeholder="Bot trả lời...">
-            <button onclick="add('bot')">THÊM KỊCH BẢN</button>
-        </div>
-
-        <div class="scroll" id="data-list"></div>
     </div>
 
     <script>
@@ -65,55 +88,61 @@
 
         function toggleV() {
             voice = !voice;
-            document.getElementById('vBtn').innerText = voice ? "🔊 GIỌNG ĐỌC: BẬT" : "🔇 GIỌNG ĐỌC: TẮT";
-            document.getElementById('vBtn').style.background = voice ? "#00f2ea" : "#444";
+            const btn = document.getElementById('vBtn');
+            btn.innerText = voice ? "🔊 VOICE: ACTIVE" : "🔇 VOICE: OFF";
+            btn.style.background = voice ? "var(--accent)" : "#333";
             if(voice) new Audio().play();
         }
 
-        function conn() { socket.emit('set-host', document.getElementById('host').value); }
+        function connect() { socket.emit('set-host', document.getElementById('host').value); }
 
         async function add(type) {
-            let payload;
-            if(type==='word') payload = document.getElementById('wIn').value;
-            if(type==='bot') payload = {k: document.getElementById('botK').value, r: document.getElementById('botR').value};
-            
-            await fetch('/api/update', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type, payload}) });
-            loadData();
+            let data = {};
+            if(type==='word') data = {w: document.getElementById('wIn').value};
+            if(type==='bot') data = {k: document.getElementById('botK').value, r: document.getElementById('botR').value};
+            await fetch('/api/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type, data}) });
+            loadDB();
         }
 
-        async function del(col, id) { await fetch(`/api/${col}/${id}`, { method: 'DELETE' }); loadData(); }
+        async function del(col, id) { await fetch(`/api/${col}/${id}`, { method: 'DELETE' }); loadDB(); }
 
-        async function loadData() {
-            const res = await (await fetch('/api/data')).json();
-            const list = document.getElementById('data-list');
-            list.innerHTML = res.words.map(w => `<div class="msg"><span>🚫 ${w.word}</span> <span style="color:red;cursor:pointer" onclick="del('word','${w._id}')">Xóa</span></div>`).join('');
+        async function loadDB() {
+            const res = await (await fetch('/api/all')).json();
+            const list = document.getElementById('db-list');
+            list.innerHTML = res.words.map(w => `<div class="msg-card"><div class="msg-header">BANNED <span style="color:red;cursor:pointer" onclick="del('bannedword','${w._id}')">REMOVE</span></div>${w.word}</div>`).join('');
         }
 
         function play() {
             if (!q.length) { playing = false; return; }
             playing = true; const a = new Audio(q.shift());
-            a.onended = () => setTimeout(play, 200); a.play().catch(() => play());
+            a.onended = () => setTimeout(play, 300);
+            a.play().catch(() => { playing = false; play(); });
         }
 
         socket.on('event', d => {
             if (d.type === 'welcome' && !document.getElementById('cWelcome').checked) return;
             if (d.type === 'gift' && !document.getElementById('cGift').checked) return;
+            if (d.type === 'bot' && !document.getElementById('cBot').checked) return;
             if (d.type === 'pk' && !document.getElementById('cPK').checked) return;
 
-            const div = document.createElement('div');
-            div.className = 'msg';
-            div.innerHTML = `<span><b>${d.user}:</b> ${d.msg}</span>`;
-            document.getElementById('chat-box').prepend(div);
-
+            const box = document.getElementById('chat-box');
+            const item = document.createElement('div');
+            item.className = 'msg-card';
+            item.innerHTML = `<div class="msg-header"><span>${d.type.toUpperCase()}</span> <span>JUST NOW</span></div><b>${d.user}:</b> ${d.msg}`;
+            box.prepend(item);
             if (voice && d.audio) { q.push(d.audio); if (!playing) play(); }
         });
 
-        function showTab(t) {
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.getElementById(t+'-ui').style.display = 'block';
+        socket.on('status', s => document.getElementById('stt').innerText = s);
+
+        function setTab(t) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.ui-group').forEach(el => el.style.display = 'none');
+            document.getElementById('ui-'+t).style.display = 'block';
         }
 
-        loadData();
+        loadDB();
     </script>
 </body>
 </html>
