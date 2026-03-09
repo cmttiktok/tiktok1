@@ -12,17 +12,16 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.json());
 
-// Kết nối MongoDB
+// Kết nối Database
 const MONGODB_URI = "mongodb+srv://baoboi97:baoboi97@cluster0.skkajlz.mongodb.net/tiktok_tts?retryWrites=true&w=majority&appName=Cluster0";
 mongoose.connect(MONGODB_URI).then(() => console.log("✅ MongoDB Connected"));
 
-// Định nghĩa Schemas
 const BannedWord = mongoose.model('BannedWord', { word: String });
 const Acronym = mongoose.model('Acronym', { key: String, value: String });
 const EmojiMap = mongoose.model('EmojiMap', { icon: String, text: String });
 const BotAnswer = mongoose.model('BotAnswer', { keyword: String, response: String });
 
-// --- API QUẢN TRỊ (Dùng chung cho cả Index và Admin) ---
+// API Quản trị dữ liệu
 app.get('/api/words', async (req, res) => res.json((await BannedWord.find()).map(w => w.word)));
 app.post('/api/words', async (req, res) => {
     const word = req.body.word ? req.body.word.toLowerCase().trim() : "";
@@ -55,7 +54,7 @@ app.post('/api/bot', async (req, res) => {
 });
 app.delete('/api/bot/:id', async (req, res) => { await BotAnswer.findByIdAndDelete(req.params.id); res.sendStatus(200); });
 
-// --- XỬ LÝ TTS LOGIC ---
+// Xử lý chuyển đổi văn bản và âm thanh
 async function isBanned(text) {
     if (!text) return false;
     const banned = await BannedWord.find();
@@ -84,11 +83,8 @@ async function getGoogleAudio(text) {
     } catch (e) { return null; }
 }
 
-// --- ĐIỀU HƯỚNG TRANG ---
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 
-// --- SOCKET.IO & TIKTOK CONNECTOR ---
 io.on('connection', (socket) => {
     let tiktok;
     let pkTimer = null;
@@ -96,14 +92,10 @@ io.on('connection', (socket) => {
     socket.on('set-username', (username) => {
         if (tiktok) tiktok.disconnect();
         tiktok = new WebcastPushConnection(username, { processInitialData: false });
-        
-        tiktok.connect()
-            .then(() => socket.emit('status', `Đã kết nối: ${username}`))
-            .catch(err => socket.emit('status', `Lỗi: ${err.message}`));
+        tiktok.connect().then(() => socket.emit('status', `Đã kết nối: ${username}`)).catch(() => socket.emit('status', "Lỗi kết nối"));
 
         tiktok.on('chat', async (data) => {
             if (await isBanned(data.nickname)) return;
-            
             const botRules = await BotAnswer.find();
             const commentLower = data.comment.toLowerCase();
             const match = botRules.find(r => commentLower.includes(r.keyword));
@@ -149,12 +141,7 @@ io.on('connection', (socket) => {
             }
         });
     });
-
-    socket.on('disconnect', () => {
-        if (tiktok) tiktok.disconnect();
-        if (pkTimer) clearInterval(pkTimer);
-    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server chạy tại: http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server chạy tại cổng ${PORT}`));
