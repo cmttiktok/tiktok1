@@ -9,7 +9,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
         :root { 
             --primary: #ff85a2; --bg: #fff5f7; --card: #ffffff; --text: #5d4037; 
-            --border: #f8bbd0; --error: #ff5252; 
+            --border: #f8bbd0; --error: #ff5252; --success: #4caf50;
             --color-pk: #00f2ea; --color-welcome: #ffde59; --color-gift: #ff914d; --color-bot: #ff66c4;
         }
         * { box-sizing: border-box; }
@@ -19,7 +19,7 @@
         .left-side { width: 330px; display: flex; flex-direction: column; border-right: 2px solid var(--border); background: #fff; flex-shrink: 0; }
         .right-side { flex: 1; display: flex; flex-direction: column; padding: 15px; background: var(--bg); overflow: hidden; }
 
-        /* Đồng hồ & Nét đứt */
+        /* Đồng hồ */
         .clock-box { background: linear-gradient(135deg, #ff85a2, #ffb3c6); color: white; padding: 15px; text-align: center; border-radius: 0 0 25px 25px; }
         #clock-time { font-size: 32px; font-weight: 700; line-height: 1; }
         #clock-date { font-size: 11px; font-weight: 700; margin: 5px 0; line-height: 1.4; }
@@ -28,11 +28,14 @@
 
         .control-panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; }
         
-        /* Box kết nối */
+        /* Kết nối & Trạng thái */
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .conn-row { display: flex; gap: 8px; }
-        input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; text-transform: lowercase; }
         .btn-conn { background: var(--primary); color: white; border: none; padding: 0 18px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+        #stt-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); min-height: 45px; }
+        #avatar-img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); display: none; object-fit: cover; }
 
         /* Nút bấm đa màu */
         .sw-list { display: flex; flex-direction: column; gap: 8px; }
@@ -58,19 +61,13 @@
         .journal-header { background: white; padding: 12px 20px; border-radius: 20px 20px 0 0; border: 2px solid var(--border); border-bottom: none; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
         .journal-content { flex: 1; background: #fafafa; border: 2px solid var(--border); border-radius: 0 0 20px 20px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 12px; }
         
-        .msg-card { 
-            background: white; padding: 10px 15px; border-radius: 15px; 
-            border: 1px solid #f0f0f0; box-shadow: 0 4px 8px rgba(0,0,0,0.03);
-            max-width: 90%; align-self: flex-start;
-        }
+        .msg-card { background: white; padding: 10px 15px; border-radius: 15px; border: 1px solid #f0f0f0; box-shadow: 0 4px 8px rgba(0,0,0,0.03); max-width: 90%; align-self: flex-start; }
         .msg-card b { color: var(--primary); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px; }
         .msg-text { font-size: 14px; font-weight: 500; }
 
-        /* Tối ưu Mobile */
         @media (max-width: 768px) {
             .app-container { flex-direction: column; height: 100vh; }
             .left-side { width: 100%; border-right: none; }
-            /* Cố định chiều cao nhật ký live mobile */
             .right-side { width: 100%; height: 260px; padding: 10px; flex: none; margin-top: auto; }
             .sw-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
             .sw-item.master { grid-column: span 2; }
@@ -92,8 +89,12 @@
         <div class="control-panel">
             <div class="box-conn">
                 <div class="conn-row">
-                    <input type="text" id="user" placeholder="ID TikTok...">
+                    <input type="text" id="user" placeholder="ID TikTok..." oninput="this.value = this.value.toLowerCase()">
                     <button class="btn-conn" onclick="start()">KẾT NỐI</button>
+                </div>
+                <div id="stt-container">
+                    <img id="avatar-img" src="" alt="">
+                    <span id="stt-text">✨ Hệ thống sẵn sàng</span>
                 </div>
             </div>
 
@@ -127,13 +128,12 @@
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2, count = 0;
 
-    // --- FIX LỖI ÂM LỊCH TỰ ĐỘNG (Không dùng file ngoài) ---
     function updateClock() {
         const now = new Date();
         const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
         document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
         
-        // Thuật toán ÂL tính nhanh cho năm 2026 (Ngày 1 Tết 2026 là 17/02/2026)
+        // Thuật toán ÂL 2026
         const tet2026 = new Date(2026, 1, 17);
         const diffDays = Math.floor((now - tet2026) / (1000 * 60 * 60 * 24));
         let lDay = (diffDays % 30) + 1;
@@ -141,8 +141,9 @@
         if (lDay <= 0) { lDay += 30; lMonth -= 1; }
         if (lMonth <= 0) lMonth = 12;
 
-        const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}`;
-        document.getElementById('clock-date').innerHTML = `${solarStr} - Âm lịch: ${lDay}/${lMonth}`;
+        // Bổ sung đầy đủ năm dương lịch
+        const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+        document.getElementById('clock-date').innerHTML = `${solarStr}<br>Âm lịch: ${lDay}/${lMonth}`;
     }
     setInterval(updateClock, 1000); updateClock();
 
@@ -154,18 +155,32 @@
     function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
+        document.getElementById('stt-text').innerText = "Đang kết nối...";
         socket.emit('set-username', u);
     }
 
+    socket.on('status', d => {
+        const sttText = document.getElementById('stt-text');
+        const img = document.getElementById('avatar-img');
+        
+        if (typeof d === 'string') {
+            sttText.innerText = d;
+        } else {
+            sttText.innerText = d.text || "Đã kết nối";
+            if(d.avatar) {
+                img.src = d.avatar;
+                img.style.display = 'block';
+            }
+        }
+    });
+
     socket.on('audio-data', d => {
         if (!document.getElementById('masterToggle').checked) return;
-
         const chat = document.getElementById('chat');
         const card = document.createElement('div');
         card.className = 'msg-card';
         card.innerHTML = `<b>${d.user}</b><div class="msg-text">${d.comment}</div>`;
         chat.prepend(card);
-        
         count++; 
         document.getElementById('msg-count').innerText = `${count} TIN`;
         if(chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
