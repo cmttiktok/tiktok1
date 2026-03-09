@@ -12,7 +12,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.json());
 
-// Kết nối Database
 const MONGODB_URI = "mongodb+srv://baoboi97:baoboi97@cluster0.skkajlz.mongodb.net/tiktok_tts?retryWrites=true&w=majority&appName=Cluster0";
 mongoose.connect(MONGODB_URI).then(() => console.log("✅ MongoDB Connected"));
 
@@ -21,7 +20,7 @@ const Acronym = mongoose.model('Acronym', { key: String, value: String });
 const EmojiMap = mongoose.model('EmojiMap', { icon: String, text: String });
 const BotAnswer = mongoose.model('BotAnswer', { keyword: String, response: String });
 
-// API Quản trị dữ liệu
+// --- API QUẢN TRỊ ---
 app.get('/api/words', async (req, res) => res.json((await BannedWord.find()).map(w => w.word)));
 app.post('/api/words', async (req, res) => {
     const word = req.body.word ? req.body.word.toLowerCase().trim() : "";
@@ -54,7 +53,7 @@ app.post('/api/bot', async (req, res) => {
 });
 app.delete('/api/bot/:id', async (req, res) => { await BotAnswer.findByIdAndDelete(req.params.id); res.sendStatus(200); });
 
-// Xử lý chuyển đổi văn bản và âm thanh
+// --- XỬ LÝ TEXT & AUDIO ---
 async function isBanned(text) {
     if (!text) return false;
     const banned = await BannedWord.find();
@@ -92,7 +91,14 @@ io.on('connection', (socket) => {
     socket.on('set-username', (username) => {
         if (tiktok) tiktok.disconnect();
         tiktok = new WebcastPushConnection(username, { processInitialData: false });
-        tiktok.connect().then(() => socket.emit('status', `Đã kết nối: ${username}`)).catch(() => socket.emit('status', "Lỗi kết nối"));
+        
+        tiktok.connect().then(state => {
+            socket.emit('status', {
+                text: `Đã kết nối: ${username}`,
+                connected: true,
+                avatar: state.roomInfo.owner.avatar_thumb.url_list[0]
+            });
+        }).catch(() => socket.emit('status', { text: "Lỗi kết nối", connected: false }));
 
         tiktok.on('chat', async (data) => {
             if (await isBanned(data.nickname)) return;
