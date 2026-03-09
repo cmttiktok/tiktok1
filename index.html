@@ -146,15 +146,6 @@
         currentSpeed = parseFloat(v);
     }
 
-    // --- HÀM ĐỌC THÔNG BÁO NỘI BỘ ---
-    function speakNotice(text) {
-        if (!window.speechSynthesis) return;
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'vi-VN';
-        utter.rate = currentSpeed;
-        window.speechSynthesis.speak(utter);
-    }
-
     function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
@@ -174,8 +165,12 @@
                 img.style.display = 'block';
             }
             if (!connectedOnce) {
-                speakNotice("kết nối thành công bèo ơi, bắt đầu đọc comment");
+                // SỬ DỤNG LINK GOOGLE TTS TRỰC TIẾP VÀO QUEUE
+                const msg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
+                const googleVoiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(msg)}&tl=vi&client=tw-ob`;
+                queue.push(googleVoiceUrl);
                 connectedOnce = true;
+                if(!playing) play();
             }
         } else {
             sttText.innerText = d.text || d;
@@ -207,10 +202,16 @@
     function play() {
         if(!queue.length || !document.getElementById('masterToggle').checked){ playing=false; return; }
         playing = true;
-        const a = new Audio(queue.shift());
+        const currentAudioUrl = queue.shift();
+        const a = new Audio(currentAudioUrl);
         a.playbackRate = currentSpeed;
         a.onended = () => setTimeout(play, 150);
-        a.play().catch(() => play());
+        
+        // Cố gắng phát âm thanh, nếu lỗi (do link google bị chặn) thì tự bỏ qua để đọc comment tiếp
+        a.play().catch(e => {
+            console.error("Lỗi phát âm thanh:", e);
+            play();
+        });
     }
 </script>
 </body>
