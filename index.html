@@ -3,118 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDOL BÈO - LUXURY DASHBOARD</title>
+    <title>Bèo Control 🌸 PK Master</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/tuyenld/vietnamese-lunar-calendar/lunar-calendar.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --pink: #ff2d55; --pink-soft: #fff0f3; --text: #2d3436; --radius: 16px; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdf2f4; margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; padding: 10px; box-sizing: border-box; }
+        :root { --pink: #ff8fa3; --pink-bold: #ff4d6d; --bg: #fdf2f4; --card: #ffffff; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; padding: 15px; box-sizing: border-box; }
         
-        .sidebar { width: 300px; background: #fff; border-radius: var(--radius); display: flex; flex-direction: column; padding: 15px; box-shadow: 5px 0 20px rgba(0,0,0,0.03); }
-        .brand { font-weight: 800; font-size: 18px; color: var(--pink); margin-bottom: 12px; text-align: center; }
+        .sidebar { width: 320px; background: var(--card); border-radius: 25px; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 10px 30px rgba(255, 143, 163, 0.1); }
+        .clock-box { background: linear-gradient(135deg, #ff8fa3, #ffb3c1); border-radius: 20px; padding: 15px; color: white; text-align: center; margin-bottom: 20px; }
+        #time { font-size: 28px; font-weight: 800; }
+        #date-box { font-size: 11px; font-weight: 600; opacity: 0.9; margin-top: 5px; }
+
+        .status-bar { background: var(--bg); border-radius: 15px; padding: 10px; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; border: 1px dashed var(--pink); height: 55px; box-sizing: border-box; }
+        #avatar { width: 35px; height: 35px; border-radius: 50%; display: none; border: 2px solid white; }
+        #stt { font-size: 11px; font-weight: 700; color: var(--pink-bold); flex: 1; }
+
+        .input-group { display: flex; gap: 5px; margin-bottom: 15px; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; font-size: 13px; font-weight: 600; outline: none; }
+        .btn-connect { background: var(--pink-bold); color: white; border: none; padding: 0 15px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 12px; }
+
+        .control-item { display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #f0f0f0; padding: 10px 15px; border-radius: 15px; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: #555; }
+        .control-item.speed { flex-direction: column; align-items: flex-start; gap: 8px; }
         
-        .clock-widget { background: linear-gradient(135deg, var(--pink), #ff758c); padding: 12px; border-radius: 12px; color: white; text-align: center; margin-bottom: 12px; }
-        #time { font-size: 22px; font-weight: 800; }
-        #date-solar { font-size: 11px; font-weight: 600; opacity: 0.9; }
-
-        .pk-btn { background: #1a1a1a; color: #ffd700; border: 1.5px solid #ffd700; padding: 10px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 11px; width: 100%; margin-bottom: 10px; }
-        .pk-btn.active { background: #ffd700; color: #000; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
-
-        .speed-control { background: var(--pink-soft); padding: 10px; border-radius: 12px; margin-bottom: 10px; }
-        .speed-control span { font-size: 10px; font-weight: 800; color: var(--pink); }
-
-        input[type="text"] { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1.5px solid #eee; font-size: 13px; font-weight: 600; margin-bottom: 8px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 10px; border-radius: 20px; border: none; background: var(--pink); color: white; font-weight: 800; cursor: pointer; font-size: 13px; }
-
-        .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .toggle-item { background: #fff; padding: 8px; border-radius: 12px; border: 1px solid #f1f1f1; display: flex; justify-content: space-between; align-items: center; }
-        .toggle-item span { font-size: 10px; font-weight: 700; }
-
-        .main { flex: 1; padding-left: 10px; display: flex; flex-direction: column; }
-        .chat-box { flex: 1; background: rgba(255, 255, 255, 0.8); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .chat-header { padding: 10px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        #chat { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; }
-
-        .msg { max-width: 90%; animation: pop 0.2s ease; }
-        .msg-bubble { background: white; padding: 8px 15px; border-radius: 15px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .msg-user { font-size: 10px; font-weight: 800; color: var(--pink); margin-left: 5px; }
-
-        .switch { position: relative; width: 30px; height: 16px; }
+        .switch { position: relative; width: 34px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ddd; border-radius: 16px; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; }
-        input:checked + .slider { background-color: var(--pink); }
-        input:checked + .slider:before { transform: translateX(14px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ddd; border-radius: 20px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background: var(--pink-bold); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
-        @keyframes pop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .main { flex: 1; margin-left: 20px; display: flex; flex-direction: column; }
+        .chat-container { flex: 1; background: white; border-radius: 25px; border: 1px solid #ffe5ec; overflow: hidden; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px 25px; border-bottom: 1px solid #fff0f3; display: flex; justify-content: space-between; align-items: center; color: var(--pink-bold); font-weight: 800; font-size: 14px; }
+        #chat { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 10px; }
+        
+        .msg { background: #fffcfd; padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); font-size: 13px; max-width: 85%; align-self: flex-start; }
+        .msg b { color: var(--pink-bold); margin-right: 5px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="brand"><i class="fab fa-tiktok"></i> IDOL BÈO</div>
-        <div class="clock-widget"><div id="time">00:00:00</div><div id="date-solar">Đang tải...</div></div>
-        
-        <button id="pkBtn" class="pk-btn" onclick="togglePK()"><i class="fas fa-bolt"></i> CHIẾN PK: TẮT</button>
-        
-        <div class="speed-control">
-            <div style="display:flex; justify-content:space-between;"><span>TỐC ĐỘ:</span><span id="sVal">1.0x</span></div>
-            <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0" style="width:100%; accent-color:var(--pink);" oninput="document.getElementById('sVal').innerText=this.value+'x'">
+        <div class="clock-box">
+            <div id="time">00:00:00</div>
+            <div id="date-box">Đang tải...</div>
         </div>
 
-        <input type="text" id="user" placeholder="@id_tiktok">
-        <button class="btn-main" onclick="start()">KẾT NỐI LIVE</button>
-
-        <div class="toggle-grid">
-            <div class="toggle-item"><span>Chat</span><label class="switch"><input type="checkbox" id="chatT" checked><span class="slider"></span></label></div>
-            <div class="toggle-item"><span>Chào</span><label class="switch"><input type="checkbox" id="welcomeT" checked><span class="slider"></span></label></div>
-            <div class="toggle-item"><span>Quà</span><label class="switch"><input type="checkbox" id="giftT" checked><span class="slider"></span></label></div>
-            <div class="toggle-item"><span>Bot</span><label class="switch"><input type="checkbox" id="botT" checked><span class="slider"></span></label></div>
+        <div class="input-group">
+            <input type="text" id="user" placeholder="Nhập ID TikTok...">
+            <button class="btn-connect" onclick="start()">KẾT NỐI</button>
         </div>
-        <a href="/admin" style="margin-top:auto; text-align:center; font-size:11px; color:#999; text-decoration:none; font-weight:700;">QUẢN LÝ DỮ LIỆU</a>
+
+        <div class="status-bar">
+            <img id="avatar" src="" alt="">
+            <span id="stt">🚀 Hệ thống sẵn sàng</span>
+        </div>
+
+        <div class="control-item speed">
+            <div style="width:100%; display:flex; justify-content:space-between;">
+                <span>TỐC ĐỘ ĐỌC</span>
+                <span id="sVal" style="color:var(--pink-bold)">1.2x</span>
+            </div>
+            <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.2" style="width:100%; accent-color:var(--pink-bold);" oninput="document.getElementById('sVal').innerText=this.value+'x'">
+        </div>
+
+        <div class="control-item"><span>HỆ THỐNG</span><label class="switch"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label></div>
+        <div class="control-item"><span>NHẮC PK 20S</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
+        <div class="control-item"><span>CHÀO PHÒNG</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+        <div class="control-item"><span>TẶNG QUÀ</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
+        <div class="control-item"><span>BOT ĐÁP</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
+
+        <button style="margin-top:auto; background:none; border:none; color:#999; font-size:11px; font-weight:800; cursor:pointer;" onclick="location.href='/admin'"><i class="fas fa-cog"></i> QUẢN LÝ DỮ LIỆU</button>
     </div>
 
     <div class="main">
-        <div class="chat-box">
-            <div class="chat-header"><h3 style="margin:0; font-size:14px; color:var(--pink)">Nhật ký Live</h3><span id="cnt" style="background:var(--pink); color:white; padding:2px 10px; border-radius:10px; font-size:10px; font-weight:800">0 TIN</span></div>
+        <div class="chat-container">
+            <div class="chat-header">
+                <span>🌸 NHẬT KÝ LIVE</span>
+                <span id="cnt" style="background:var(--pink-bold); color:white; padding:3px 10px; border-radius:10px; font-size:10px;">0 TIN</span>
+            </div>
             <div id="chat"></div>
         </div>
     </div>
 
     <script>
         const socket = io();
-        let queue = [], playing = false, count = 0, isPK = false;
-
-        function togglePK() {
-            isPK = !isPK;
-            const btn = document.getElementById('pkBtn');
-            btn.classList.toggle('active', isPK);
-            btn.innerHTML = isPK ? '<i class="fas fa-fire"></i> CHIẾN PK: BẬT' : '<i class="fas fa-bolt"></i> CHIẾN PK: TẮT';
-            ['chatT','welcomeT','botT'].forEach(id => document.getElementById(id).checked = !isPK);
-        }
+        let queue = [], playing = false, count = 0;
 
         setInterval(() => {
             const now = new Date();
             document.getElementById('time').innerText = now.toLocaleTimeString('vi-VN');
-            document.getElementById('date-solar').innerText = now.toLocaleDateString('vi-VN', {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'});
+            try {
+                const lunar = LunarCalendar.solarToLunar(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                const solarStr = now.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
+                document.getElementById('date-box').innerHTML = `DL: ${solarStr} - ÂL: ${lunar.lunarDay}/${lunar.lunarMonth}`;
+            } catch(e) { document.getElementById('date-box').innerText = now.toLocaleDateString('vi-VN'); }
         }, 1000);
 
         function start() { socket.emit('set-username', document.getElementById('user').value); }
-        socket.on('status', m => { console.log(m); });
+
+        socket.on('status', d => {
+            document.getElementById('stt').innerText = d.text;
+            if(d.connected && d.avatar) {
+                document.getElementById('avatar').src = d.avatar;
+                document.getElementById('avatar').style.display = 'block';
+            }
+        });
 
         socket.on('audio-data', d => {
+            if(!document.getElementById('masterToggle').checked) return;
+            const chat = document.getElementById('chat');
             const div = document.createElement('div'); div.className = 'msg';
-            div.innerHTML = `<div class="msg-user">${d.user}</div><div class="msg-bubble">${d.comment}</div>`;
-            document.getElementById('chat').prepend(div);
+            div.innerHTML = `<b>${d.user}:</b> ${d.comment}`;
+            chat.prepend(div);
             count++; document.getElementById('cnt').innerText = `${count} TIN`;
 
             if (d.audio) {
-                if (d.type === 'pk') { queue.push(d.audio); if (!playing) play(); return; }
-                if (isPK) return;
-                if (d.type === 'chat' && !document.getElementById('chatT').checked) return;
-                if (d.type === 'welcome' && !document.getElementById('welcomeT').checked) return;
-                if (d.type === 'gift' && !document.getElementById('giftT').checked) return;
-                if (d.type === 'bot' && !document.getElementById('botT').checked) return;
+                if (d.type === 'pk' && !document.getElementById('pkToggle').checked) return;
+                if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
+                if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
+                if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
                 queue.push(d.audio); if (!playing) play();
             }
         });
