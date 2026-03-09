@@ -19,7 +19,6 @@
         .left-side { width: 330px; display: flex; flex-direction: column; border-right: 2px solid var(--border); background: #fff; flex-shrink: 0; }
         .right-side { flex: 1; display: flex; flex-direction: column; padding: 15px; background: var(--bg); overflow: hidden; }
 
-        /* Đồng hồ */
         .clock-box { background: linear-gradient(135deg, #ff85a2, #ffb3c6); color: white; padding: 15px; text-align: center; border-radius: 0 0 25px 25px; }
         #clock-time { font-size: 32px; font-weight: 700; line-height: 1; }
         #clock-date { font-size: 11px; font-weight: 700; margin: 5px 0; line-height: 1.4; }
@@ -27,7 +26,6 @@
         .brand { font-size: 14px; font-weight: 700; }
 
         .control-panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; }
-        
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .conn-row { display: flex; gap: 8px; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; text-transform: lowercase; }
@@ -36,7 +34,6 @@
         #stt-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); min-height: 45px; }
         #avatar-img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); display: none; object-fit: cover; }
 
-        /* Tốc độ đọc */
         .speed-box { padding: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--border); }
         input[type="range"] { width: 100%; accent-color: var(--primary); }
 
@@ -59,10 +56,8 @@
         .gift input:checked + .slider { background: var(--color-gift); }
         .bot input:checked + .slider { background: var(--color-bot); }
 
-        /* Nhật ký Live */
         .journal-header { background: white; padding: 12px 20px; border-radius: 20px 20px 0 0; border: 2px solid var(--border); border-bottom: none; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
         .journal-content { flex: 1; background: #fafafa; border: 2px solid var(--border); border-radius: 0 0 20px 20px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 12px; }
-        
         .msg-card { background: white; padding: 10px 15px; border-radius: 15px; border: 1px solid #f0f0f0; box-shadow: 0 4px 8px rgba(0,0,0,0.03); max-width: 90%; align-self: flex-start; }
         .msg-card b { color: var(--primary); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px; }
         .msg-text { font-size: 14px; font-weight: 500; }
@@ -129,19 +124,18 @@
 <script>
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2, count = 0;
+    let connectedOnce = false; // Biến đánh dấu để tránh đọc lặp câu chào
 
     function updateClock() {
         const now = new Date();
         const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
         document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
-        
         const tet2026 = new Date(2026, 1, 17);
         const diffDays = Math.floor((now - tet2026) / (1000 * 60 * 60 * 24));
         let lDay = (diffDays % 30) + 1;
         let lMonth = (Math.floor(diffDays / 30) % 12) + 1;
         if (lDay <= 0) { lDay += 30; lMonth -= 1; }
         if (lMonth <= 0) lMonth = 12;
-
         const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
         document.getElementById('clock-date').innerHTML = `${solarStr} - ÂL: ${lDay}/${lMonth}`;
     }
@@ -155,6 +149,7 @@
     function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
+        connectedOnce = false; // Reset trạng thái khi bấm kết nối mới
         document.getElementById('stt-text').innerText = "Đang kết nối...";
         socket.emit('set-username', u);
     }
@@ -163,18 +158,20 @@
         const sttText = document.getElementById('stt-text');
         const img = document.getElementById('avatar-img');
         
-        // Khi nhận status thành công
         if (typeof d === 'object' && d.connected) {
-            sttText.innerText = d.text || "Kết nối thành công";
+            sttText.innerText = d.text || "Đã kết nối";
             if(d.avatar) {
                 img.src = d.avatar;
                 img.style.display = 'block';
             }
-            // PHÁT ÂM THANH CHÀO MỪNG NGAY KHI CÓ AVATAR (KẾT NỐI XONG)
-            const msg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
-            const welcomeUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(msg)}&tl=vi&client=tw-ob`;
-            queue.push(welcomeUrl);
-            if(!playing) play();
+            // Logic phát âm thanh chào mừng
+            if (!connectedOnce) {
+                const msg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
+                const welcomeUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(msg)}&tl=vi&client=tw-ob`;
+                queue.push(welcomeUrl);
+                connectedOnce = true;
+                if(!playing) play();
+            }
         } else {
             sttText.innerText = d.text || d;
         }
@@ -208,7 +205,10 @@
         const a = new Audio(queue.shift());
         a.playbackRate = currentSpeed;
         a.onended = () => setTimeout(play, 150);
-        a.play().catch(() => play());
+        a.play().catch(() => {
+            console.log("Audio play failed, skipping...");
+            play();
+        });
     }
 </script>
 </body>
