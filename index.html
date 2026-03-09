@@ -28,7 +28,6 @@
 
         .control-panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; }
         
-        /* Kết nối & Trạng thái */
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .conn-row { display: flex; gap: 8px; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; text-transform: lowercase; }
@@ -37,7 +36,10 @@
         #stt-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); min-height: 45px; }
         #avatar-img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); display: none; object-fit: cover; }
 
-        /* Nút bấm đa màu */
+        /* Tốc độ đọc */
+        .speed-box { padding: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--border); }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+
         .sw-list { display: flex; flex-direction: column; gap: 8px; }
         .sw-item { background: white; border: 2px solid var(--border); padding: 12px 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
         .sw-item.master { border-color: var(--error); color: var(--error); }
@@ -98,11 +100,11 @@
                 </div>
             </div>
 
-            <div style="padding: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--border);">
+            <div class="speed-box">
                 <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--primary); margin-bottom: 5px;">
                     <span>TỐC ĐỘ ĐỌC</span><span id="speed-val">1.2x</span>
                 </div>
-                <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)" style="width: 100%; accent-color: var(--primary);">
+                <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)">
             </div>
 
             <div class="sw-list">
@@ -128,12 +130,12 @@
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2, count = 0;
 
+    // --- CẬP NHẬT ĐỒNG HỒ GỘP DÒNG ---
     function updateClock() {
         const now = new Date();
         const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
         document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
         
-        // Thuật toán ÂL 2026
         const tet2026 = new Date(2026, 1, 17);
         const diffDays = Math.floor((now - tet2026) / (1000 * 60 * 60 * 24));
         let lDay = (diffDays % 30) + 1;
@@ -141,9 +143,9 @@
         if (lDay <= 0) { lDay += 30; lMonth -= 1; }
         if (lMonth <= 0) lMonth = 12;
 
-        // Bổ sung đầy đủ năm dương lịch
         const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
-        document.getElementById('clock-date').innerHTML = `${solarStr}<br>Âm lịch: ${lDay}/${lMonth}`;
+        // Hiển thị chung 1 dòng cách nhau bằng dấu -
+        document.getElementById('clock-date').innerHTML = `${solarStr} - ÂL: ${lDay}/${lMonth}`;
     }
     setInterval(updateClock, 1000); updateClock();
 
@@ -167,9 +169,14 @@
             sttText.innerText = d;
         } else {
             sttText.innerText = d.text || "Đã kết nối";
-            if(d.avatar) {
+            if(d.connected && d.avatar) {
                 img.src = d.avatar;
                 img.style.display = 'block';
+                // THÊM ÂM THANH KHI KẾT NỐI THÀNH CÔNG
+                const welcomeMsg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
+                const welcomeUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(welcomeMsg)}&tl=vi&client=tw-ob`;
+                queue.push(welcomeUrl);
+                if(!playing) play();
             }
         }
     });
