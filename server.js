@@ -20,6 +20,7 @@ const Acronym = mongoose.model('Acronym', { key: String, value: String });
 const EmojiMap = mongoose.model('EmojiMap', { icon: String, text: String });
 const BotAnswer = mongoose.model('BotAnswer', { keyword: String, response: String });
 
+// --- CÁC API QUẢN LÝ ---
 app.get('/api/:path', async (req, res) => {
     const { path } = req.params;
     if (path === 'words') res.json((await BannedWord.find()).map(w => w.word));
@@ -74,25 +75,29 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html'))
 
 io.on('connection', (socket) => {
     let tiktok;
-    let isInitialConnection = true; // Chặn tín hiệu PK rác khi mới kết nối
+    let isInitialConnection = true;
 
     socket.on('set-username', (username) => {
         if (tiktok) tiktok.disconnect();
-        isInitialConnection = true; 
+        isInitialConnection = true;
 
         tiktok = new WebcastPushConnection(username, { processInitialData: false });
+        
         tiktok.connect().then(() => {
             socket.emit('status', `✅ Kết nối: ${username}`);
-            // Sau 5 giây kết nối ổn định mới cho phép bắt PK
-            setTimeout(() => { isInitialConnection = false; }, 5000);
+            setTimeout(() => { isInitialConnection = false; }, 8000); // Đợi 8s để lọc dữ liệu cũ
         }).catch(e => socket.emit('status', `❌ Lỗi: ${e.message}`));
 
-        // CHỈ BẮT PK KHI KHÔNG PHẢI LÚC MỚI KẾT NỐI
-        tiktok.on('linkMicArmies', (data) => {
-            if (!isInitialConnection && data.armies && data.armies.length > 0) {
-                socket.emit('pk-start');
-            }
-        });
+        // --- CẬP NHẬT: LẮNG NGHE ĐA KÊNH PK ---
+        const handlePK = (data) => {
+            if (isInitialConnection) return;
+            console.log("⚔️ Tín hiệu PK nhận được từ TikTok!");
+            socket.emit('pk-start');
+        };
+
+        // Thử cả 2 sự kiện phổ biến nhất của PK
+        tiktok.on('linkMicArmies', handlePK);
+        tiktok.on('linkMicBattle', handlePK);
 
         tiktok.on('chat', async (data) => {
             const botRules = await BotAnswer.find();
@@ -127,4 +132,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 3000);
+server.listen(process.env.PORT || 3000, () => console.log("🚀 Server PK Master Ready!"));
