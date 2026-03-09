@@ -30,7 +30,7 @@
         .stt-success { color: var(--success); border-color: var(--success); background: #f1f8f1; }
         .stt-error { color: var(--error); border-color: var(--error); background: #fff1f1; }
 
-        #pk-timer { display:none; color: var(--pk); font-weight:700; font-size:14px; text-align:center; padding: 8px; border: 2px solid var(--pk); border-radius: 10px; background: #e0f7fa; }
+        #pk-timer { display:none; color: var(--pk); font-weight:700; font-size:14px; text-align:center; padding: 8px; border: 2px solid var(--pk); border-radius: 10px; background: #e0f7fa; margin-top: 5px; }
 
         .sw-list { display: flex; flex-direction: column; gap: 6px; }
         .sw-item { background: white; border: 1px solid var(--border); padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; }
@@ -114,6 +114,7 @@
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2;
     let pkInterval;
+    let isPkRunning = false;
 
     // --- 1. ĐỒNG HỒ ---
     function updateClock() {
@@ -148,10 +149,16 @@
         currentSpeed = parseFloat(v);
     }
 
-    // --- 4. KẾT NỐI & WAKE LOCK ---
+    // --- 4. KẾT NỐI ---
     async function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
+
+        // Reset PK mỗi khi kết nối mới
+        clearInterval(pkInterval);
+        isPkRunning = false;
+        document.getElementById('pk-timer').style.display = 'none';
+
         document.getElementById('stt-icon').innerText = "⏳";
         document.getElementById('stt-text').innerText = "Đang kết nối...";
         if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(()=>{});
@@ -160,41 +167,37 @@
 
     socket.on('status', m => {
         const sttBox = document.getElementById('stt-container');
-        const u = document.getElementById('user').value.trim();
         if(m.includes('✅')) {
             document.getElementById('stt-icon').innerText = "✅";
-            document.getElementById('stt-text').innerText = `Kết nối thành công: ${u}`;
+            document.getElementById('stt-text').innerText = m;
             sttBox.className = "stt-success";
             speakSystem("Đã kết nối thành công Bèo ơi");
         } else {
             document.getElementById('stt-icon').innerText = "❌";
-            document.getElementById('stt-text').innerText = "Lỗi hệ thống, thử lại nha";
+            document.getElementById('stt-text').innerText = "Lỗi kết nối";
             sttBox.className = "stt-error";
-            speakSystem("Lỗi rồi Bèo ơi, bấm lại nha");
         }
     });
 
     // --- 5. BỘ ĐẾM PK 5 PHÚT ---
     socket.on('pk-start', () => {
-        if (!document.getElementById('pkToggle').checked) return;
+        if (!document.getElementById('pkToggle').checked || isPkRunning) return;
         
-        clearInterval(pkInterval); // Xóa bộ đếm cũ nếu có
-        let timeLeft = 300; // 5 phút
+        isPkRunning = true;
+        let timeLeft = 300; 
         const timerBox = document.getElementById('pk-timer');
         const countdownText = document.getElementById('pk-countdown');
         
         timerBox.style.display = 'block';
+        countdownText.style.color = 'inherit';
         speakSystem("Trận PK bắt đầu rồi Bèo ơi, chiến thôi!");
 
         pkInterval = setInterval(() => {
             timeLeft--;
-            
-            // Cập nhật giao diện
             let m = Math.floor(timeLeft / 60);
             let s = timeLeft % 60;
             countdownText.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
-            // Nhắc 20 giây cuối
             if (timeLeft === 20) {
                 speakSystem("20 giây cuối thả bông lấy găng Bèo ơi, cố lên!");
                 countdownText.style.color = 'var(--error)';
@@ -202,13 +205,13 @@
 
             if (timeLeft <= 0) {
                 clearInterval(pkInterval);
+                isPkRunning = false;
                 timerBox.style.display = 'none';
-                countdownText.style.color = 'inherit';
             }
         }, 1000);
     });
 
-    // --- 6. NHẬN DATA VÀ XỬ LÝ ĐỌC ---
+    // --- 6. XỬ LÝ ÂM THANH ---
     socket.on('audio-data', d => {
         if (!document.getElementById('masterToggle').checked) return;
 
@@ -220,7 +223,7 @@
         if(chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
 
         const low = d.comment.toLowerCase();
-        if (document.getElementById('botToggle').checked && (low.includes("mấy giờ") || low.includes("ngày âm") || low.includes("âm lịch"))) {
+        if (document.getElementById('botToggle').checked && (low.includes("mấy giờ") || low.includes("ngày âm"))) {
             const now = new Date();
             let rep = low.includes("mấy giờ") ? `Bây giờ là ${now.getHours()} giờ ${now.getMinutes()} phút.` : `Hôm nay là ngày ${document.getElementById('clock-date').innerText.split('ÂL: ')[1]} âm lịch nha.`;
             const botUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(rep)}&tl=vi&client=tw-ob`;
@@ -228,8 +231,6 @@
         } else {
             if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
             if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
-            if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
-            
             if (d.audio) queue.push(d.audio);
         }
 
