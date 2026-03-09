@@ -79,6 +79,11 @@ io.on('connection', (socket) => {
         tiktok = new WebcastPushConnection(username, { processInitialData: false });
         tiktok.connect().then(() => socket.emit('status', `✅ Kết nối: ${username}`)).catch(e => socket.emit('status', `❌ Lỗi: ${e.message}`));
 
+        // LẮNG NGHE SỰ KIỆN PK ĐỂ KÍCH HOẠT BỘ ĐẾM 5 PHÚT
+        tiktok.on('linkMicArmies', () => {
+            socket.emit('pk-start'); 
+        });
+
         tiktok.on('chat', async (data) => {
             const botRules = await BotAnswer.find();
             const match = botRules.find(r => data.comment.toLowerCase().includes(r.keyword));
@@ -112,4 +117,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 3000);
+server.listen(process.env.PORT || 3000, () => console.log("🚀 Server is running!"));
