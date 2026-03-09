@@ -3,330 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDOL BÈO - HỆ THỐNG TTS CHUYÊN NGHIỆP</title>
+    <title>LIVE DASHBOARD - IDOL BÈO</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --main-color: #fe2c55;
-            --accent-color: #25f4ee;
-            --bg-dark: #0f0f0f;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-main: #ffffff;
-            --text-dim: #b0b0b0;
-        }
+        :root { --main: #fe2c55; --bg: #0b0b0d; --card: rgba(255,255,255,0.05); --accent: #25f4ee; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar điều khiển */
+        .sidebar { width: 300px; background: #161722; border-right: 1px solid #333; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .logo { font-size: 20px; font-weight: 800; color: var(--main); display: flex; align-items: center; gap: 10px; }
+        
+        /* Nút Admin */
+        .admin-link { text-decoration: none; color: #aaa; font-size: 13px; padding: 10px; border: 1px dashed #444; border-radius: 8px; text-align: center; transition: 0.3s; }
+        .admin-link:hover { border-color: var(--main); color: white; }
 
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 50% -20%, #2c161b 0%, #0f0f0f 80%);
-            color: var(--text-main);
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            height: 100vh;
-            box-sizing: border-box;
-        }
-
-        /* Header Layout */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 5px;
-        }
-
-        .header h3 {
-            margin: 0;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            background: linear-gradient(to right, var(--main-color), var(--accent-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-dot {
-            height: 8px;
-            width: 8px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-            box-shadow: 0 0 10px var(--accent-color);
-        }
-
-        /* Main Grid */
-        .container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 15px;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-
-        .column {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-
-        /* Inputs & Buttons */
-        input {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            color: white;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--main-color);
-            box-shadow: 0 0 8px rgba(254, 44, 85, 0.3);
-        }
-
-        button {
-            background: linear-gradient(45deg, var(--main-color), #ff5e7e);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(254, 44, 85, 0.4); }
-
-        /* Controls Area */
-        .controls { margin-top: 15px; }
-
-        .setting-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 10px;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        /* Chat List */
-        .list-box {
-            flex-grow: 1;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid var(--border-color);
-        }
-
-        .msg {
-            background: rgba(255,255,255,0.02);
-            margin-bottom: 6px;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            border-left: 3px solid transparent;
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
-        /* Tabs */
-        .tabs-container {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-            background: rgba(0,0,0,0.2);
-            padding: 5px;
-            border-radius: 12px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            transition: 0.3s;
-            color: var(--text-dim);
-        }
-
-        .tab-active { background: var(--main-color); color: white; }
+        .status-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border-left: 4px solid var(--accent); }
+        
+        .toggle-group { display: flex; flex-direction: column; gap: 10px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 12px; border-radius: 10px; }
+        
+        /* Chat Area */
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        .chat-container { flex: 1; background: #000; border-radius: 15px; border: 1px solid #222; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; }
+        
+        .msg-card { background: rgba(255,255,255,0.03); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--main); animation: slideIn 0.2s ease; }
+        .msg-user { color: var(--accent); font-weight: bold; font-size: 14px; }
+        .msg-text { margin-top: 5px; color: #efefef; line-height: 1.4; }
 
         /* Switch UI */
-        .switch { position: relative; width: 38px; height: 20px; }
+        .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 20px; transition: .3s; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .3s; }
-        input:checked + .slider { background-color: var(--main-color); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 22px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .3s; }
+        input:checked + .slider { background-color: var(--main); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* Responsive cho điện thoại */
-        @media (max-width: 850px) {
-            .container { grid-template-columns: 1fr; overflow-y: auto; }
-            body { height: auto; }
-            .column { min-height: 400px; }
-            .left { order: 1; }
-            .right { order: 2; }
-        }
-
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+        input[type="text"] { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; }
+        button.btn-connect { background: var(--main); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h3><i class="fab fa-tiktok"></i> BÈO DASHBOARD</h3>
-        <div id="stt-container"><span class="status-dot"></span> <span id="stt" style="color:var(--accent-color); font-size:12px; font-weight:bold;">Sẵn sàng</span></div>
+    <div class="sidebar">
+        <div class="logo"><i class="fab fa-tiktok"></i> IDOL BÈO TTS</div>
+        
+        <div class="status-box">
+            <div style="font-size: 11px; color: #888;">TRẠNG THÁI</div>
+            <div id="stt" style="font-weight: bold; color: var(--accent); margin-top: 5px;">Chưa kết nối</div>
+        </div>
+
+        <div>
+            <input type="text" id="user" placeholder="ID TikTok chủ live...">
+            <button class="btn-connect" onclick="start()" style="margin-top: 8px;">KẾT NỐI NGAY</button>
+        </div>
+
+        <div class="toggle-group">
+            <div class="setting-item"><span>Chào khách</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+            <div class="setting-item"><span>Cảm ơn quà</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
+            <div class="setting-item"><span>Trợ lý ảo</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
+            <div class="setting-item"><span>Nhắc PK</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
+        </div>
+
+        <a href="/admin" class="admin-link"><i class="fas fa-cog"></i> Cài đặt từ cấm & kịch bản</a>
     </div>
 
-    <div class="container">
-        <div class="column left">
-            <input type="text" id="user" placeholder="Nhập Username TikTok">
-            <button onclick="start()"><i class="fas fa-plug"></i> KẾT NỐI LIVE</button>
-
-            <div class="controls">
-                <div class="setting-row">
-                    <span><i class="fas fa-door-open" style="color:#ffcc00"></i> Chào người vào</span>
-                    <label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label>
-                </div>
-                <div class="setting-row">
-                    <span><i class="fas fa-gift" style="color:#ff4d4d"></i> Cảm ơn quà</span>
-                    <label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label>
-                </div>
-                <div class="setting-row">
-                    <span><i class="fas fa-robot" style="color:#00f2ea"></i> Trợ lý ảo</span>
-                    <label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label>
-                </div>
-                <div class="setting-row">
-                    <span><i class="fas fa-clock" style="color:#4dff88"></i> Nhắc PK 20s</span>
-                    <label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label>
-                </div>
-            </div>
-
-            <div class="list-box" id="chat">
-                <div class="msg" style="text-align: center; color: var(--text-dim);">Chưa có tin nhắn nào...</div>
-            </div>
+    <div class="main-content">
+        <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin:0">NHẬT KÝ LIVE STREAM</h4>
+            <span id="counter" style="font-size: 12px; color: #555;">0 tin nhắn</span>
         </div>
-
-        <div class="column right">
-            <div class="tabs-container">
-                <div class="tab-btn tab-active" id="btn-ban" onclick="switchTab('ban')">TỪ CẤM</div>
-                <div class="tab-btn" id="btn-acr" onclick="switchTab('acr')">VIẾT TẮT</div>
-                <div class="tab-btn" id="btn-emo" onclick="switchTab('emo')">ICON</div>
-                <div class="tab-btn" id="btn-bot" onclick="switchTab('bot')">TRỢ LÝ</div>
-            </div>
-
-            <div id="tab-content">
-                <div id="tab-ban-ui">
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="new-word" placeholder="Nhập từ cần chặn..." style="flex:1">
-                        <button onclick="addWord()" style="width: 100px;">THÊM</button>
-                    </div>
-                    <div class="list-box" id="word-list"></div>
-                </div>
-
-                <div id="tab-acr-ui" style="display:none;">
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="acr-key" placeholder="Viết tắt (vd: k)" style="flex:1">
-                        <input type="text" id="acr-val" placeholder="Đọc thành (vd: không)" style="flex:1">
-                        <button onclick="addAcr()" style="width: 100%; margin-top: 0;">THÊM CẤU HÌNH</button>
-                    </div>
-                    <div class="list-box" id="acr-list"></div>
-                </div>
-
-                <div id="tab-emo-ui" style="display:none;">
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="emo-icon" placeholder="Icon" style="flex: 0.5">
-                        <input type="text" id="emo-text" placeholder="Lời đọc" style="flex: 1">
-                        <button onclick="addEmo()" style="width: 100px;">THÊM</button>
-                    </div>
-                    <div class="list-box" id="emo-list"></div>
-                </div>
-
-                <div id="tab-bot-ui" style="display:none;">
-                    <input type="text" id="bot-key" placeholder="Khách hỏi (vd: béo đâu)">
-                    <input type="text" id="bot-res" placeholder="Trợ lý trả lời (vd: Bèo đang uống nước ạ)">
-                    <button onclick="addBot()"><i class="fas fa-plus"></i> THÊM KỊCH BẢN</button>
-                    <div class="list-box" id="bot-list"></div>
-                </div>
-            </div>
-        </div>
+        <div class="chat-container" id="chat"></div>
     </div>
 
     <script>
         const socket = io();
-        let queue = [], playing = false;
+        let queue = [], playing = false, count = 0;
 
-        function switchTab(t) {
-            ['ban','acr','emo','bot'].forEach(tab => { 
-                document.getElementById(`tab-${tab}-ui`).style.display = tab === t ? 'block' : 'none'; 
-                document.getElementById(`btn-${tab}`).classList.toggle('tab-active', tab === t); 
-            });
-        }
-
-        async function loadData() {
-            const words = await (await fetch('/api/words')).json();
-            document.getElementById('word-list').innerHTML = words.map(w => `<div class="msg"><span>${w}</span><span onclick="delWord('${w}')" style="color:#ff4d4d;float:right;cursor:pointer;"><i class="fas fa-trash"></i></span></div>`).join('');
-            const acrs = await (await fetch('/api/acronyms')).json();
-            document.getElementById('acr-list').innerHTML = acrs.map(a => `<div class="msg"><span><b>${a.key}</b> <i class="fas fa-arrow-right" style="font-size:10px; opacity:0.5"></i> ${a.value}</span><span onclick="delAcr('${a.key}')" style="color:#ff4d4d;float:right;cursor:pointer;"><i class="fas fa-trash"></i></span></div>`).join('');
-            const emos = await (await fetch('/api/emojis')).json();
-            document.getElementById('emo-list').innerHTML = emos.map(e => `<div class="msg"><span>${e.icon} <i class="fas fa-volume-up" style="font-size:10px; opacity:0.5"></i> ${e.text}</span><span onclick="delEmo('${e._id}')" style="color:#ff4d4d;float:right;cursor:pointer;"><i class="fas fa-trash"></i></span></div>`).join('');
-            const bots = await (await fetch('/api/bot')).json();
-            document.getElementById('bot-list').innerHTML = bots.map(b => `<div class="msg"><div style="color:var(--accent-color)">Hỏi: ${b.keyword}</div><div style="font-size:12px; color:var(--text-dim)">➔ TL: ${b.response}</div><span onclick="delBot('${b._id}')" style="color:#ff4d4d;float:right;cursor:pointer; margin-top:-20px;"><i class="fas fa-trash"></i></span></div>`).join('');
-        }
-
-        async function addBot() {
-            await fetch('/api/bot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({keyword: document.getElementById('bot-key').value, response: document.getElementById('bot-res').value}) });
-            document.getElementById('bot-key').value=''; document.getElementById('bot-res').value=''; loadData();
-        }
-        async function delBot(id) { await fetch(`/api/bot/${id}`, { method: 'DELETE' }); loadData(); }
-        async function addWord() { await fetch('/api/words', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({word: document.getElementById('new-word').value}) }); document.getElementById('new-word').value=''; loadData(); }
-        async function delWord(w) { await fetch(`/api/words/${encodeURIComponent(w)}`, { method: 'DELETE' }); loadData(); }
-        async function addAcr() { await fetch('/api/acronyms', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key: document.getElementById('acr-key').value, value: document.getElementById('acr-val').value}) }); document.getElementById('acr-key').value=''; document.getElementById('acr-val').value=''; loadData(); }
-        async function delAcr(k) { await fetch(`/api/acronyms/${encodeURIComponent(k)}`, { method: 'DELETE' }); loadData(); }
-        async function addEmo() { await fetch('/api/emojis', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({icon: document.getElementById('emo-icon').value, text: document.getElementById('emo-text').value}) }); document.getElementById('emo-icon').value=''; document.getElementById('emo-text').value=''; loadData(); }
-        async function delEmo(id) { await fetch(`/api/emojis/${id}`, { method: 'DELETE' }); loadData(); }
-
-        function start() { 
-            const user = document.getElementById('user').value;
-            if(!user) return alert("Vui lòng nhập ID TikTok");
-            socket.emit('set-username', user); 
-        }
+        function start() { socket.emit('set-username', document.getElementById('user').value); }
+        socket.on('status', m => document.getElementById('stt').innerText = m);
         
-        socket.on('status', m => {
-            document.getElementById('stt').innerText = m;
-            document.querySelector('.status-dot').style.backgroundColor = m.includes('Đã kết nối') ? '#4dff88' : '#fe2c55';
-        });
-
         socket.on('audio-data', d => {
             const chat = document.getElementById('chat');
-            if(chat.innerHTML.includes('Chưa có tin nhắn')) chat.innerHTML = '';
-            
-            const div = document.createElement('div'); div.className = 'msg';
+            const div = document.createElement('div'); div.className = 'msg-card';
             const color = d.type === 'bot' ? '#00f2ea' : (d.type === 'gift' ? '#ff4d4d' : '#fe2c55');
-            div.innerHTML = `<b style="color:${color}">${d.user}:</b> ${d.comment}`;
+            div.innerHTML = `<div class="msg-user" style="color:${color}">${d.user}</div><div class="msg-text">${d.comment}</div>`;
             chat.prepend(div);
+            
+            count++; document.getElementById('counter').innerText = `${count} tin nhắn`;
 
             if (d.audio) {
                 if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
@@ -342,7 +107,6 @@
             playing = true; const a = new Audio(queue.shift());
             a.onended = () => setTimeout(play, 300); a.play().catch(() => play());
         }
-        loadData();
     </script>
 </body>
 </html>
