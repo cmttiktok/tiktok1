@@ -74,14 +74,24 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html'))
 
 io.on('connection', (socket) => {
     let tiktok;
+    let isInitialConnection = true; // Chặn tín hiệu PK rác khi mới kết nối
+
     socket.on('set-username', (username) => {
         if (tiktok) tiktok.disconnect();
-        tiktok = new WebcastPushConnection(username, { processInitialData: false });
-        tiktok.connect().then(() => socket.emit('status', `✅ Kết nối: ${username}`)).catch(e => socket.emit('status', `❌ Lỗi: ${e.message}`));
+        isInitialConnection = true; 
 
-        // LẮNG NGHE SỰ KIỆN PK ĐỂ KÍCH HOẠT BỘ ĐẾM 5 PHÚT
-        tiktok.on('linkMicArmies', () => {
-            socket.emit('pk-start'); 
+        tiktok = new WebcastPushConnection(username, { processInitialData: false });
+        tiktok.connect().then(() => {
+            socket.emit('status', `✅ Kết nối: ${username}`);
+            // Sau 5 giây kết nối ổn định mới cho phép bắt PK
+            setTimeout(() => { isInitialConnection = false; }, 5000);
+        }).catch(e => socket.emit('status', `❌ Lỗi: ${e.message}`));
+
+        // CHỈ BẮT PK KHI KHÔNG PHẢI LÚC MỚI KẾT NỐI
+        tiktok.on('linkMicArmies', (data) => {
+            if (!isInitialConnection && data.armies && data.armies.length > 0) {
+                socket.emit('pk-start');
+            }
         });
 
         tiktok.on('chat', async (data) => {
@@ -117,4 +127,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 3000, () => console.log("🚀 Server is running!"));
+server.listen(process.env.PORT || 3000);
