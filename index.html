@@ -1,161 +1,38 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BÈO DASHBOARD - PK MASTER</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <style>
-        :root { --main: #fe2c55; --bg: #121212; --panel: #1e1e1e; --pk: #4dd0e1; }
-        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; display: flex; gap: 15px; height: 100vh; box-sizing: border-box; }
-        .column { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
-        .left { flex: 1; border: 1px solid var(--main); } .right { flex: 1.5; }
-        input, button { padding: 10px; margin: 5px 0; border-radius: 8px; border: none; width: 100%; box-sizing: border-box; outline: none; }
-        button { background: var(--main); color: white; font-weight: bold; cursor: pointer; }
-        .list-box { flex-grow: 1; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #222; }
-        .msg { font-size: 13px; border-bottom: 1px solid #222; padding: 8px 0; }
-        .setting-row { display: flex; align-items: center; justify-content: space-between; background: #252525; padding: 8px; border-radius: 8px; margin: 5px 0; font-size: 12px; }
-        
-        /* PK UI */
-        #pk-timer { display:none; color: var(--pk); font-weight:bold; text-align:center; padding: 10px; border: 2px solid var(--pk); border-radius: 10px; background: rgba(77, 208, 225, 0.1); margin: 10px 0; }
-        .btn-pk-manual { background: var(--pk); color: #000; font-size: 11px; margin-top: 5px; }
-        
-        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; border-radius: 18px; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; }
-        input:checked + .slider { background-color: var(--main); }
-        input:checked + .slider:before { transform: translateX(16px); }
-        .tab-btn { background: #333; width: 24%; display: inline-block; padding: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 10px; }
-        .tab-active { background: var(--main); }
-    </style>
-</head>
-<body>
-    <div class="column left">
-        <h3 style="color:var(--main); margin:0 0 10px 0; text-align:center;">🎙️ BÈO CONTROL</h3>
-        <input type="text" id="user" placeholder="Nhập ID TikTok">
-        <button onclick="start()">KẾT NỐI</button>
-        <p id="stt" style="color:#00f2ea; font-size:12px; text-align:center; margin: 5px 0;">Sẵn sàng</p>
+// Tìm đoạn script PK trong file index.html của bạn và thay thế bằng đoạn này:
+let pkInterval;
+let isPkRunning = false;
 
-        <div id="pk-timer">⚔️ ĐANG PK: <span id="pk-countdown">05:00</span></div>
-        <button class="btn-pk-manual" onclick="triggerPK()">BẮT ĐẦU PK THỦ CÔNG</button>
+socket.on('pk-start', () => {
+    if (!document.getElementById('pkToggle').checked || isPkRunning) return;
+    
+    isPkRunning = true;
+    let timeLeft = 300; 
+    const sttBox = document.getElementById('stt');
+    
+    // Thông báo bằng giọng nói
+    const pkStartAudio = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent("Bèo ơi trận PK bắt đầu rồi kìa")}&tl=vi&client=tw-ob`;
+    queue.push(pkStartAudio);
+    if(!playing) play();
 
-        <div class="setting-row"><span>🔊 Chào người vào:</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
-        <div class="setting-row"><span>🎁 Cảm ơn quà:</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
-        <div class="setting-row"><span>🤖 Trợ lý ảo:</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
-        <div class="setting-row"><span>🔥 Nhắc PK 20s:</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
-        
-        <div class="list-box" id="chat"></div>
-    </div>
+    pkInterval = setInterval(() => {
+        timeLeft--;
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        sttBox.innerText = `⚔️ ĐANG PK: ${m}:${s < 10 ? '0'+s : s}`;
+        sttBox.style.color = "#4dd0e1";
 
-    <div class="column right">
-        <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
-            <div class="tab-btn tab-active" id="btn-ban" onclick="switchTab('ban')">TỪ CẤM</div>
-            <div class="tab-btn" id="btn-acr" onclick="switchTab('acr')">VIẾT TẮT</div>
-            <div class="tab-btn" id="btn-emo" onclick="switchTab('emo')">ICON</div>
-            <div class="tab-btn" id="btn-bot" onclick="switchTab('bot')">TRỢ LÝ</div>
-        </div>
-        <div id="tab-ban-ui"><input type="text" id="new-word" placeholder="Chặn..."><button onclick="addWord()">THÊM</button><div class="list-box" id="word-list"></div></div>
-        <div id="tab-acr-ui" style="display:none;"><input type="text" id="acr-key" placeholder="Viết tắt"><input type="text" id="acr-val" placeholder="Dịch"><button onclick="addAcr()">THÊM</button><div class="list-box" id="acr-list"></div></div>
-        <div id="tab-emo-ui" style="display:none;"><input type="text" id="emo-icon" placeholder="Icon"><input type="text" id="emo-text" placeholder="Đọc"><button onclick="addEmo()">THÊM</button><div class="list-box" id="emo-list"></div></div>
-        <div id="tab-bot-ui" style="display:none;"><input type="text" id="bot-key" placeholder="Từ khóa"><input type="text" id="bot-res" placeholder="Trả lời"><button onclick="addBot()">THÊM</button><div class="list-box" id="bot-list"></div></div>
-    </div>
-
-    <script>
-        const socket = io();
-        let queue = [], playing = false;
-        let pkInterval, isPkRunning = false;
-
-        function start() { socket.emit('set-username', document.getElementById('user').value); }
-        
-        // LOGIC PK CHUẨN
-        socket.on('pk-start', () => { triggerPK(); });
-
-        function triggerPK() {
-            if (!document.getElementById('pkToggle').checked || isPkRunning) return;
-            
-            isPkRunning = true;
-            let timeLeft = 300; 
-            const timerBox = document.getElementById('pk-timer');
-            const countdownText = document.getElementById('pk-countdown');
-            
-            timerBox.style.display = 'block';
-            speakSystem("Trận PK bắt đầu rồi Bèo ơi, chiến thôi!");
-
-            pkInterval = setInterval(() => {
-                timeLeft--;
-                let m = Math.floor(timeLeft / 60);
-                let s = timeLeft % 60;
-                countdownText.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-
-                if (timeLeft === 20) {
-                    speakSystem("20 giây cuối thả bông lấy găng Bèo ơi, cố lên!");
-                    countdownText.style.color = '#fe2c55';
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(pkInterval);
-                    isPkRunning = false;
-                    timerBox.style.display = 'none';
-                    countdownText.style.color = '#4dd0e1';
-                }
-            }, 1000);
+        if (timeLeft === 20) {
+            const warnAudio = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent("Hai mươi giây cuối kìa Bèo ơi cố lên")}&tl=vi&client=tw-ob`;
+            queue.push(warnAudio);
+            if(!playing) play();
+            sttBox.style.color = "red";
         }
 
-        async function speakSystem(text) {
-            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`;
-            queue.push(url); if (!playing) play();
+        if (timeLeft <= 0) {
+            clearInterval(pkInterval);
+            isPkRunning = false;
+            sttBox.innerText = "Sẵn sàng";
+            sttBox.style.color = "#00f2ea";
         }
-
-        socket.on('audio-data', d => {
-            if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
-            if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
-            if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
-            
-            const chat = document.getElementById('chat');
-            const div = document.createElement('div'); div.className = 'msg';
-            div.innerHTML = `<b style="color:#fe2c55">${d.user}:</b> ${d.comment}`;
-            chat.prepend(div);
-
-            if (d.audio) { queue.push(d.audio); if (!playing) play(); }
-        });
-
-        function play() {
-            if (!queue.length) { playing = false; return; }
-            playing = true; const a = new Audio(queue.shift());
-            a.onended = () => setTimeout(play, 300); a.play().catch(() => play());
-        }
-
-        // Tải dữ liệu ban đầu (Giữ nguyên các hàm fetch của bạn)
-        async function loadData() {
-            try {
-                const words = await (await fetch('/api/words')).json();
-                document.getElementById('word-list').innerHTML = words.map(w => `<div class="msg"><span>${w}</span><span onclick="delWord('${w}')" style="color:red;float:right;cursor:pointer;">X</span></div>`).join('');
-                const acrs = await (await fetch('/api/acronyms')).json();
-                document.getElementById('acr-list').innerHTML = acrs.map(a => `<div class="msg"><span>${a.key}➜${a.value}</span><span onclick="delAcr('${a.key}')" style="color:red;float:right;cursor:pointer;">X</span></div>`).join('');
-                const emos = await (await fetch('/api/emojis')).json();
-                document.getElementById('emo-list').innerHTML = emos.map(e => `<div class="msg"><span>${e.icon}➜${e.text}</span><span onclick="delEmo('${e._id}')" style="color:red;float:right;cursor:pointer;">X</span></div>`).join('');
-                const bots = await (await fetch('/api/bot')).json();
-                document.getElementById('bot-list').innerHTML = bots.map(b => `<div class="msg"><span>${b.keyword} ➔ ${b.response}</span><span onclick="delBot('${b._id}')" style="color:red;float:right;cursor:pointer;">X</span></div>`).join('');
-            } catch(e) {}
-        }
-        function switchTab(t) {
-            ['ban','acr','emo','bot'].forEach(tab => { 
-                document.getElementById(`tab-${tab}-ui`).style.display = tab === t ? 'block' : 'none'; 
-                document.getElementById(`btn-${tab}`).classList.toggle('tab-active', tab === t); 
-            });
-        }
-        async function addWord() { await fetch('/api/words', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({word: document.getElementById('new-word').value}) }); loadData(); }
-        async function delWord(w) { await fetch(`/api/words/${encodeURIComponent(w)}`, { method: 'DELETE' }); loadData(); }
-        async function addAcr() { await fetch('/api/acronyms', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key: document.getElementById('acr-key').value, value: document.getElementById('acr-val').value}) }); loadData(); }
-        async function delAcr(k) { await fetch(`/api/acronyms/${encodeURIComponent(k)}`, { method: 'DELETE' }); loadData(); }
-        async function addEmo() { await fetch('/api/emojis', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({icon: document.getElementById('emo-icon').value, text: document.getElementById('emo-text').value}) }); loadData(); }
-        async function delEmo(id) { await fetch(`/api/emojis/${id}`, { method: 'DELETE' }); loadData(); }
-        async function addBot() { await fetch('/api/bot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({keyword: document.getElementById('bot-key').value, response: document.getElementById('bot-res').value}) }); loadData(); }
-        async function delBot(id) { await fetch(`/api/bot/${id}`, { method: 'DELETE' }); loadData(); }
-        
-        socket.on('status', m => document.getElementById('stt').innerText = m);
-        loadData();
-    </script>
-</body>
-</html>
+    }, 1000);
+});
