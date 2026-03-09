@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bèo Control 🌸 PK Master</title>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/tuyenld/vietnamese-lunar-calendar/lunar-calendar.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
         :root { 
             --primary: #ff85a2; --bg: #fff5f7; --card: #ffffff; --text: #5d4037; 
-            --border: #f8bbd0; --success: #4caf50; --error: #ff5252; 
+            --border: #f8bbd0; --error: #ff5252; 
             --color-pk: #00f2ea; --color-welcome: #ffde59; --color-gift: #ff914d; --color-bot: #ff66c4;
         }
         * { box-sizing: border-box; }
@@ -20,21 +19,20 @@
         .left-side { width: 330px; display: flex; flex-direction: column; border-right: 2px solid var(--border); background: #fff; flex-shrink: 0; }
         .right-side { flex: 1; display: flex; flex-direction: column; padding: 15px; background: var(--bg); overflow: hidden; }
 
-        /* Đồng hồ & Bèo Google */
-        .clock-box { background: linear-gradient(135deg, #ff85a2, #ffb3c6); color: white; padding: 15px; text-align: center; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(255,133,162,0.2); }
+        /* Đồng hồ & Nét đứt */
+        .clock-box { background: linear-gradient(135deg, #ff85a2, #ffb3c6); color: white; padding: 15px; text-align: center; border-radius: 0 0 25px 25px; }
         #clock-time { font-size: 32px; font-weight: 700; line-height: 1; }
         #clock-date { font-size: 11px; font-weight: 700; margin: 5px 0; line-height: 1.4; }
         .brand-divider { border-top: 1.5px dashed rgba(255,255,255,0.6); margin: 8px auto; width: 80%; }
         .brand { font-size: 14px; font-weight: 700; }
 
         .control-panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; }
+        
+        /* Box kết nối */
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .conn-row { display: flex; gap: 8px; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; }
         .btn-conn { background: var(--primary); color: white; border: none; padding: 0 18px; border-radius: 12px; font-weight: 700; cursor: pointer; }
-
-        #stt-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); }
-        #avatar-img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); display: none; object-fit: cover; }
 
         /* Nút bấm đa màu */
         .sw-list { display: flex; flex-direction: column; gap: 8px; }
@@ -61,21 +59,19 @@
         .journal-content { flex: 1; background: #fafafa; border: 2px solid var(--border); border-radius: 0 0 20px 20px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 12px; }
         
         .msg-card { 
-            background: white; padding: 12px 15px; border-radius: 18px; 
+            background: white; padding: 10px 15px; border-radius: 15px; 
             border: 1px solid #f0f0f0; box-shadow: 0 4px 8px rgba(0,0,0,0.03);
-            max-width: 90%; align-self: flex-start; animation: fadeIn 0.3s ease;
+            max-width: 90%; align-self: flex-start;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-card b { color: var(--primary); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 4px; }
-        .msg-text { font-size: 14px; color: #333; font-weight: 500; }
+        .msg-card b { color: var(--primary); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .msg-text { font-size: 14px; font-weight: 500; }
 
         /* Tối ưu Mobile */
         @media (max-width: 768px) {
-            .app-container { flex-direction: column; height: 100vh; overflow: hidden; }
-            .left-side { width: 100%; border-right: none; height: auto; flex-shrink: 0; }
-            /* Cập nhật chiều cao nhật ký mobile ~ 5 dòng */
-            .right-side { width: 100%; flex: 1; padding: 10px; overflow: hidden; height: 280px; } 
-            .journal-content { height: 100%; } 
+            .app-container { flex-direction: column; height: 100vh; }
+            .left-side { width: 100%; border-right: none; }
+            /* Cố định chiều cao nhật ký live mobile */
+            .right-side { width: 100%; height: 260px; padding: 10px; flex: none; margin-top: auto; }
             .sw-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
             .sw-item.master { grid-column: span 2; }
             .clock-box { border-radius: 0; }
@@ -99,18 +95,6 @@
                     <input type="text" id="user" placeholder="ID TikTok...">
                     <button class="btn-conn" onclick="start()">KẾT NỐI</button>
                 </div>
-                <div id="stt-container">
-                    <img id="avatar-img" src="" alt="">
-                    <span id="stt-text">✨ Sẵn sàng</span>
-                </div>
-            </div>
-
-            <div class="sw-list">
-                <div class="sw-item master"><span>TẮT HỆ THỐNG</span><label class="switch master"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item pk"><span>NHẮC PK 20S</span><label class="switch pk"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item welcome"><span>👋 CHÀO</span><label class="switch welcome"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item gift"><span>🎁 QUÀ</span><label class="switch gift"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item bot"><span>🤖 BOT</span><label class="switch bot"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
             </div>
 
             <div style="padding: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--border);">
@@ -118,6 +102,14 @@
                     <span>TỐC ĐỘ ĐỌC</span><span id="speed-val">1.2x</span>
                 </div>
                 <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)" style="width: 100%; accent-color: var(--primary);">
+            </div>
+
+            <div class="sw-list">
+                <div class="sw-item master"><span>TẮT HỆ THỐNG</span><label class="switch master"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item pk"><span>NHẮC PK 20S</span><label class="switch pk"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item welcome"><span>👋 CHÀO PHÒNG</span><label class="switch welcome"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item gift"><span>🎁 TẶNG QUÀ</span><label class="switch gift"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item bot"><span>🤖 BOT ĐÁP</span><label class="switch bot"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
             </div>
         </div>
     </div>
@@ -135,17 +127,22 @@
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2, count = 0;
 
-    // --- ĐỒNG HỒ & ÂM LỊCH ---
+    // --- FIX LỖI ÂM LỊCH TỰ ĐỘNG (Không dùng file ngoài) ---
     function updateClock() {
         const now = new Date();
         const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
         document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
         
-        try {
-            const lunar = LunarCalendar.solarToLunar(now.getFullYear(), now.getMonth() + 1, now.getDate());
-            const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}`;
-            document.getElementById('clock-date').innerHTML = `${solarStr} | ÂL: ${lunar.lunarDay}/${lunar.lunarMonth}`;
-        } catch(e) { document.getElementById('clock-date').innerText = now.toLocaleDateString('vi-VN'); }
+        // Thuật toán ÂL tính nhanh cho năm 2026 (Ngày 1 Tết 2026 là 17/02/2026)
+        const tet2026 = new Date(2026, 1, 17);
+        const diffDays = Math.floor((now - tet2026) / (1000 * 60 * 60 * 24));
+        let lDay = (diffDays % 30) + 1;
+        let lMonth = (Math.floor(diffDays / 30) % 12) + 1;
+        if (lDay <= 0) { lDay += 30; lMonth -= 1; }
+        if (lMonth <= 0) lMonth = 12;
+
+        const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}`;
+        document.getElementById('clock-date').innerHTML = `${solarStr} - Âm lịch: ${lDay}/${lMonth}`;
     }
     setInterval(updateClock, 1000); updateClock();
 
@@ -157,17 +154,8 @@
     function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
-        document.getElementById('stt-text').innerText = "Đang kết nối...";
         socket.emit('set-username', u);
     }
-
-    socket.on('status', d => {
-        document.getElementById('stt-text').innerText = d.text || d;
-        if(d.connected && d.avatar) {
-            const img = document.getElementById('avatar-img');
-            img.src = d.avatar; img.style.display = 'block';
-        }
-    });
 
     socket.on('audio-data', d => {
         if (!document.getElementById('masterToggle').checked) return;
