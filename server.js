@@ -13,28 +13,30 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.json());
 
 const MONGODB_URI = "mongodb+srv://baoboi97:baoboi97@cluster0.skkajlz.mongodb.net/tiktok_tts?retryWrites=true&w=majority&appName=Cluster0";
-mongoose.connect(MONGODB_URI).then(() => console.log("✅ MongoDB Connected"));
+mongoose.connect(MONGODB_URI).then(() => console.log("✅ MongoDB Connected")).catch(e => console.log("❌ DB Error", e));
 
 const BannedWord = mongoose.model('BannedWord', { word: String });
 const Acronym = mongoose.model('Acronym', { key: String, value: String });
 const EmojiMap = mongoose.model('EmojiMap', { icon: String, text: String });
 const BotAnswer = mongoose.model('BotAnswer', { keyword: String, response: String });
 
-// --- API QUẢN TRỊ (Giữ nguyên) ---
+// API QUẢN TRỊ (Giữ nguyên để bạn không phải sửa Admin UI)
 app.get('/api/:path', async (req, res) => {
-    const { path } = req.params;
-    if (path === 'words') res.json((await BannedWord.find()).map(w => w.word));
-    else if (path === 'acronyms') res.json(await Acronym.find());
-    else if (path === 'emojis') res.json(await EmojiMap.find());
-    else res.json(await BotAnswer.find());
+    try {
+        const { path } = req.params;
+        if (path === 'words') return res.json((await BannedWord.find()).map(w => w.word));
+        if (path === 'acronyms') return res.json(await Acronym.find());
+        if (path === 'emojis') return res.json(await EmojiMap.find());
+        res.json(await BotAnswer.find());
+    } catch (e) { res.status(500).send(e.message); }
 });
 
 app.post('/api/:path', async (req, res) => {
-    const { path } = req.params; const { word, key, value, icon, text, keyword, response } = req.body;
-    if (path === 'words' && word) await BannedWord.updateOne({ word: word.toLowerCase() }, { word }, { upsert: true });
-    else if (path === 'acronyms') await Acronym.findOneAndUpdate({ key: key.toLowerCase() }, { value }, { upsert: true });
-    else if (path === 'emojis') await EmojiMap.findOneAndUpdate({ icon }, { text }, { upsert: true });
-    else if (path === 'bot') await BotAnswer.findOneAndUpdate({ keyword: keyword.toLowerCase() }, { response }, { upsert: true });
+    const { path } = req.params; const data = req.body;
+    if (path === 'words') await BannedWord.updateOne({ word: data.word.toLowerCase() }, { word: data.word.toLowerCase() }, { upsert: true });
+    else if (path === 'acronyms') await Acronym.findOneAndUpdate({ key: data.key.toLowerCase() }, { value: data.value }, { upsert: true });
+    else if (path === 'emojis') await EmojiMap.findOneAndUpdate({ icon: data.icon }, { text: data.text }, { upsert: true });
+    else if (path === 'bot') await BotAnswer.findOneAndUpdate({ keyword: data.keyword.toLowerCase() }, { response: data.response }, { upsert: true });
     res.sendStatus(200);
 });
 
@@ -47,22 +49,7 @@ app.delete('/api/:path/:id', async (req, res) => {
     res.sendStatus(200);
 });
 
-// --- XỬ LÝ TTS ---
-async function processText(text) {
-    if (!text) return null;
-    const banned = await BannedWord.find();
-    if (banned.some(b => text.toLowerCase().includes(b.word))) return null;
-    let processed = text;
-    const emojis = await EmojiMap.find();
-    for (const e of emojis) processed = processed.split(e.icon).join(" " + e.text + " ");
-    const acronyms = await Acronym.find();
-    acronyms.forEach(a => {
-        const regex = new RegExp(`(?<!\\p{L})${a.key}(?!\\p{L})`, 'giu');
-        processed = processed.replace(regex, a.value);
-    });
-    return processed;
-}
-
+// XỬ LÝ TTS & PK
 async function getGoogleAudio(text) {
     try {
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text.substring(0, 200))}&tl=vi&client=tw-ob`;
@@ -75,24 +62,24 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 io.on('connection', (socket) => {
     let tiktok;
-    let isInitialConnection = true; // Chặn tín hiệu ảo khi mới kết nối
+    let isInitial = true;
 
     socket.on('set-username', (username) => {
         if (tiktok) tiktok.disconnect();
-        isInitialConnection = true;
-
+        isInitial = true;
         tiktok = new WebcastPushConnection(username, { processInitialData: false });
+
         tiktok.connect().then(() => {
-            socket.emit('status', `✅ Đã kết nối: ${username}`);
-            // Sau 8 giây mới cho phép nhận tín hiệu PK để đảm bảo luồng dữ liệu đã sạch
-            setTimeout(() => { isInitialConnection = false; }, 8000);
+            socket.emit('status', `✅ Kết nối thành công: ${username}`);
+            setTimeout(() => { isInitial = false; }, 10000); // 10 giây đầu bỏ qua PK ảo
         }).catch(e => socket.emit('status', `❌ Lỗi: ${e.message}`));
 
-        // LOGIC PK CHÍNH XÁC
+        // BẮT PK VỚI LOGIC CHÍNH XÁC CAO
         const handlePK = (data) => {
-            if (isInitialConnection) return;
-            // Chỉ bắt khi thực sự có dữ liệu trận đấu
-            if (data && ((data.armies && data.armies.length > 0) || data.battleUsers)) {
+            if (isInitial) return; 
+            // Kiểm tra xem có dữ liệu quân đội PK không
+            if (data.armies && data.armies.length > 0) {
+                console.log("🔥 PK THẬT SỰ BẮT ĐẦU!");
                 socket.emit('pk-start');
             }
         };
@@ -100,38 +87,26 @@ io.on('connection', (socket) => {
         tiktok.on('linkMicArmies', handlePK);
         tiktok.on('linkMicBattle', handlePK);
 
+        // Xử lý Chat & Bot
         tiktok.on('chat', async (data) => {
-            const botRules = await BotAnswer.find();
-            const match = botRules.find(r => data.comment.toLowerCase().includes(r.keyword));
+            const bots = await BotAnswer.find();
+            const match = bots.find(b => data.comment.toLowerCase().includes(b.keyword));
             if (match) {
-                const audio = await getGoogleAudio(`Anh ${data.nickname} ơi, ${match.response}`);
-                socket.emit('audio-data', { type: 'bot', user: "TRỢ LÝ", comment: match.response, audio });
+                const audio = await getGoogleAudio(`Bèo đáp nè: ${match.response}`);
+                socket.emit('audio-data', { type: 'bot', user: "🤖 TRỢ LÝ", comment: match.response, audio });
             } else {
-                const final = await processText(data.comment);
-                if (final) {
-                    const audio = await getGoogleAudio(`${data.nickname} nói: ${final}`);
-                    socket.emit('audio-data', { type: 'chat', user: data.nickname, comment: data.comment, audio });
-                }
-            }
-        });
-
-        tiktok.on('member', async (data) => {
-            const final = await processText(data.nickname);
-            if (final) {
-                const audio = await getGoogleAudio(`Bèo ơi, anh ${final} ghé chơi nè`);
-                socket.emit('audio-data', { type: 'welcome', user: "Hệ thống", comment: `${data.nickname} vào`, audio });
+                const audio = await getGoogleAudio(`${data.nickname} nói: ${data.comment}`);
+                socket.emit('audio-data', { type: 'chat', user: data.nickname, comment: data.comment, audio });
             }
         });
 
         tiktok.on('gift', async (data) => {
             if (data.repeatEnd) {
-                const final = await processText(data.nickname);
-                const audio = await getGoogleAudio(`Cảm ơn ${final} đã tặng ${data.giftName}`);
-                socket.emit('audio-data', { type: 'gift', user: "QUÀ", comment: `${data.nickname} tặng ${data.giftName}`, audio });
+                const audio = await getGoogleAudio(`Cảm ơn ${data.nickname} đã tặng ${data.giftName}`);
+                socket.emit('audio-data', { type: 'gift', user: "🎁 QUÀ", comment: `Tặng ${data.giftName}`, audio });
             }
         });
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 PK Master Ready on port ${PORT}`));
+server.listen(process.env.PORT || 3000, () => console.log("🚀 Hệ thống đã sẵn sàng!"));
