@@ -3,185 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIKTOK TTS DASHBOARD</title>
+    <title>IDOL BÈO - LUXURY DASHBOARD</title>
     <script src="/socket.io/socket.io.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #fe2c55;
             --secondary: #25f4ee;
-            --bg-body: #f0f2f5;
-            --bg-card: #ffffff;
-            --text-main: #161823;
-            --text-sub: #616770;
-            --border: #e4e6eb;
-            --radius: 20px; /* Độ bo tròn chính */
+            --bg: #f4f7fa;
+            --glass: rgba(255, 255, 255, 0.85);
+            --text: #1a1d23;
+            --sub-text: #64748b;
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --radius-lg: 24px;
+            --radius-md: 16px;
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(254, 44, 85, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(37, 244, 238, 0.05) 0px, transparent 50%);
             margin: 0;
             display: flex;
             height: 100vh;
+            color: var(--text);
             overflow: hidden;
         }
 
-        /* Sidebar - Bo tròn các góc */
+        /* SIDEBAR SANG TRỌNG */
         .sidebar {
-            width: 320px;
-            background: var(--bg-card);
-            border-right: 1px solid var(--border);
+            width: 350px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
             display: flex;
             flex-direction: column;
-            padding: 25px;
+            padding: 40px 30px;
             box-sizing: border-box;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.02);
         }
 
-        .logo {
-            font-size: 22px;
-            font-weight: 800;
+        .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 30px;
-            color: var(--primary);
+            gap: 15px;
+            margin-bottom: 40px;
         }
 
-        /* Các khối chức năng bo tròn */
-        .status-card {
-            background: #f8f9fa;
-            padding: 18px;
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
+        .brand-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), #ff758c);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 8px 15px rgba(254, 44, 85, 0.3);
         }
 
-        .status-label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
-        #stt { font-weight: 700; margin-top: 5px; display: block; color: var(--primary); }
+        .brand-name { font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
+
+        .status-pill {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .status-pill small { color: var(--sub-text); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+        #stt { display: block; margin-top: 5px; font-weight: 700; color: var(--primary); font-size: 14px; }
+
+        /* INPUT CẢI TIẾN */
+        .input-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
 
         input[type="text"] {
             width: 100%;
-            padding: 14px 20px;
-            border: 1.5px solid var(--border);
-            border-radius: 30px; /* Bo tròn hoàn toàn 2 đầu */
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            border: 2px solid transparent;
             background: #fff;
+            box-shadow: var(--shadow);
             box-sizing: border-box;
             font-size: 14px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: var(--text);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
             outline: none;
-            transition: 0.3s;
+            transform: translateY(-2px);
         }
-        input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(254, 44, 85, 0.1); }
 
-        .btn-connect {
+        .btn-action {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(45deg, var(--primary), #ff5e7e);
-            color: white;
+            padding: 16px;
+            border-radius: var(--radius-md);
             border: none;
-            border-radius: 30px;
+            background: var(--text);
+            color: white;
             font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
-            margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(254, 44, 85, 0.2);
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .btn-action:hover { background: #000; transform: translateY(-2px); box-shadow: 0 15px 25px rgba(0,0,0,0.15); }
+
+        /* TOGGLE BUTTONS CỰC ĐẸP */
+        .config-section { margin-top: 35px; }
+        .config-title { font-size: 12px; font-weight: 800; color: var(--sub-text); margin-bottom: 15px; padding-left: 5px; }
+        
+        .toggle-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0,0,0,0.02);
             transition: 0.3s;
         }
-        .btn-connect:hover { transform: scale(1.02); opacity: 0.95; }
 
-        .controls-title { font-size: 12px; font-weight: 800; color: var(--text-sub); margin: 25px 0 10px 10px; }
-        
-        /* Item cài đặt bo tròn */
-        .toggle-item {
+        .toggle-card:hover { transform: scale(1.02); box-shadow: var(--shadow); }
+        .toggle-card span { font-size: 14px; font-weight: 600; color: #475569; }
+
+        /* CHAT LOG HIỆN ĐẠI */
+        .main {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .chat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 18px;
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            margin-bottom: 8px;
-            transition: 0.2s;
+            margin-bottom: 25px;
         }
-        .toggle-item:hover { background: #fdfdfd; border-color: #d1d1d1; }
 
-        .admin-btn {
+        .chat-header h2 { margin: 0; font-weight: 800; font-size: 24px; letter-spacing: -1px; }
+
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 15px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 15px;
+        }
+
+        .message-item {
+            display: flex;
+            gap: 15px;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .msg-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            border-bottom-left-radius: 4px;
+            box-shadow: var(--shadow);
+            max-width: 70%;
+        }
+
+        .msg-user { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .msg-text { font-size: 14px; line-height: 1.5; color: #334155; font-weight: 500; }
+
+        /* SWITCH UI */
+        .switch { position: relative; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e2e8f0; border-radius: 34px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input:checked + .slider { background: linear-gradient(135deg, #4ade80, #22c55e); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .admin-link {
             margin-top: auto;
             text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            padding: 14px;
-            background: #161823;
-            color: #fff;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 18px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
+            font-weight: 700;
+            font-size: 13px;
+            transition: 0.3s;
         }
+        .admin-link:hover { background: var(--text); color: #fff; }
 
-        /* Vùng Chat Log */
-        .main { flex: 1; display: flex; flex-direction: column; background: #fff; margin: 15px; border-radius: var(--radius); box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        .main-header { padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column-reverse; gap: 15px; }
-
-        /* Bong bóng chat bo tròn sâu */
-        .msg { display: flex; flex-direction: column; max-width: 85%; animation: slideUp 0.3s ease; }
-        .msg-bubble {
-            background: #e4e6eb;
-            padding: 12px 20px;
-            border-radius: 22px;
-            border-bottom-left-radius: 5px;
-            font-size: 15px;
-            color: #050505;
-        }
-        .msg-user { font-size: 12px; font-weight: 700; margin-bottom: 4px; margin-left: 10px; color: var(--text-sub); }
-
-        /* Switch UI tròn trịa */
-        .switch { position: relative; width: 42px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ced4da; border-radius: 30px; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; }
-        input:checked + .slider { background-color: #45bd62; }
-        input:checked + .slider:before { transform: translateX(18px); }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo"><i class="fab fa-tiktok"></i> <span>IDOL BÈO</span></div>
+        <div class="brand">
+            <div class="brand-icon"><i class="fab fa-tiktok"></i></div>
+            <div class="brand-name">IDOL BÈO</div>
+        </div>
         
-        <div class="status-card">
-            <span class="status-label">KẾT NỐI LIVE</span>
-            <span id="stt">Chưa bắt đầu</span>
+        <div class="status-pill">
+            <small>Live Connection</small>
+            <span id="stt">Waiting for system...</span>
         </div>
 
-        <div class="input-group">
-            <input type="text" id="user" placeholder="@username_tiktok">
-            <button class="btn-connect" onclick="start()">BẮT ĐẦU LIVE</button>
+        <div class="input-box">
+            <input type="text" id="user" placeholder="Nhập ID TikTok chủ live...">
+        </div>
+        <button class="btn-action" onclick="start()">KẾT NỐI HỆ THỐNG</button>
+
+        <div class="config-section">
+            <div class="config-title">QUẢN LÝ CHẾ ĐỘ</div>
+            <div class="toggle-card"><span>Chào khách vào</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+            <div class="toggle-card"><span>Cảm ơn quà</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
+            <div class="toggle-card"><span>Trợ lý ảo</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
+            <div class="toggle-card"><span>Nhắc PK 20s</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
         </div>
 
-        <div class="controls-title">CHẾ ĐỘ HOẠT ĐỘNG</div>
-        <div class="toggle-item"><span>Chào khách</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
-        <div class="toggle-item"><span>Cảm ơn quà</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
-        <div class="toggle-item"><span>Trợ lý ảo</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
-        <div class="toggle-item"><span>Nhắc PK</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
-
-        <a href="/admin" class="admin-btn"><i class="fas fa-sliders-h"></i> CÀI ĐẶT HỆ THỐNG</a>
+        <a href="/admin" class="admin-link">
+            <i class="fas fa-layer-group"></i> CẤU HÌNH DỮ LIỆU
+        </a>
     </div>
 
     <div class="main">
-        <div class="main-header">
-            <h3 style="margin:0; font-size:16px;">Nhật ký trò chuyện</h3>
-            <span id="counter" style="background:#f0f2f5; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; color:var(--text-sub)">0 tin</span>
+        <div class="chat-header">
+            <h2>Live Monitor</h2>
+            <div id="counter" style="background: var(--text); color: white; padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 800;">0 TIN NHẮN</div>
         </div>
         <div id="chat">
-            <div style="text-align:center; color:#bcc0c4; margin-top:100px;">
-                <i class="fas fa-stream fa-3x" style="margin-bottom:15px"></i>
-                <p>Nhập ID và nhấn Bắt đầu để xem nhật ký</p>
+            <div style="text-align: center; color: #94a3b8; margin-top: 100px;">
+                <i class="fas fa-radar fa-3x" style="margin-bottom: 20px; opacity: 0.2;"></i>
+                <p style="font-weight: 600;">Hệ thống đã sẵn sàng.<br>Vui lòng kết nối để bắt đầu quét.</p>
             </div>
         </div>
     </div>
@@ -192,14 +270,14 @@
 
         function start() { 
             const user = document.getElementById('user').value;
-            if(!user) return alert("Vui lòng nhập ID TikTok!");
+            if(!user) return;
             socket.emit('set-username', user); 
         }
 
         socket.on('status', m => {
             const stt = document.getElementById('stt');
             stt.innerText = m;
-            stt.style.color = m.includes('Đã kết nối') ? '#45bd62' : '#fe2c55';
+            stt.style.color = m.includes('Đã kết nối') ? '#22c55e' : '#fe2c55';
         });
         
         socket.on('audio-data', d => {
@@ -207,20 +285,22 @@
             if(count === 0) chat.innerHTML = ''; 
 
             const div = document.createElement('div');
-            div.className = 'msg';
+            div.className = 'message-item';
             
-            let bubbleStyle = '';
-            if(d.type === 'gift') bubbleStyle = 'background: #fff0f3; border: 1px solid #ffccd5; color: #fe2c55;';
-            if(d.type === 'bot') bubbleStyle = 'background: #e7f3ff; border: 1px solid #bbdcff; color: #1877f2;';
+            let nameStyle = '';
+            if(d.type === 'gift') nameStyle = 'color: #fe2c55;';
+            if(d.type === 'bot') nameStyle = 'color: #0ea5e9;';
 
             div.innerHTML = `
-                <div class="msg-user">${d.user}</div>
-                <div class="msg-bubble" style="${bubbleStyle}">${d.comment}</div>
+                <div class="msg-content">
+                    <span class="msg-user" style="${nameStyle}">${d.user}</span>
+                    <div class="msg-text">${d.comment}</div>
+                </div>
             `;
             chat.prepend(div);
             
             count++;
-            document.getElementById('counter').innerText = `${count} tin nhắn`;
+            document.getElementById('counter').innerText = `${count} TIN NHẮN`;
 
             if (d.audio) {
                 if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
