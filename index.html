@@ -3,268 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDOL BÈO - LUXURY DASHBOARD</title>
+    <title>IDOL BÈO - LUXURY PINK DASHBOARD</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/tuyenld/vietnamese-lunar-calendar/lunar-calendar.min.js"></script>
+    
     <style>
         :root {
-            --primary: #fe2c55;
-            --secondary: #25f4ee;
-            --bg: #f4f7fa;
-            --glass: rgba(255, 255, 255, 0.85);
-            --text: #1a1d23;
-            --sub-text: #64748b;
-            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
-            --radius-lg: 24px;
-            --radius-md: 16px;
+            --pink-deep: #ff2d55;
+            --pink-light: #ff85a1;
+            --pink-soft: #fff0f3;
+            --bg-dark: #1a1a1a;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --radius: 24px;
+            --shadow: 0 10px 40px rgba(255, 45, 85, 0.1);
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: var(--bg);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(254, 44, 85, 0.05) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(37, 244, 238, 0.05) 0px, transparent 50%);
+            background: #fdf2f4;
+            background-image: linear-gradient(135deg, #fdf2f4 0%, #fae1e6 100%);
             margin: 0;
             display: flex;
             height: 100vh;
-            color: var(--text);
+            color: var(--text-main);
             overflow: hidden;
         }
 
-        /* SIDEBAR SANG TRỌNG */
+        /* SIDEBAR */
         .sidebar {
-            width: 350px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            width: 380px;
+            background: var(--card-bg);
+            border-right: 1px solid rgba(255, 45, 85, 0.1);
             display: flex;
             flex-direction: column;
-            padding: 40px 30px;
+            padding: 30px;
             box-sizing: border-box;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.02);
+            box-shadow: 15px 0 50px rgba(0,0,0,0.03);
+            z-index: 10;
         }
 
         .brand {
+            font-weight: 800;
+            font-size: 24px;
+            color: var(--pink-deep);
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 40px;
+            gap: 12px;
+            margin-bottom: 30px;
         }
 
-        .brand-icon {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--primary), #ff758c);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-            box-shadow: 0 8px 15px rgba(254, 44, 85, 0.3);
-        }
-
-        .brand-name { font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
-
-        .status-pill {
-            background: white;
+        /* CLOCK WIDGET */
+        .clock-widget {
+            background: linear-gradient(135deg, var(--pink-deep), #ff758c);
             padding: 20px;
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(0,0,0,0.03);
+            border-radius: var(--radius);
+            color: white;
             margin-bottom: 25px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 10px 25px rgba(255, 45, 85, 0.3);
+            text-align: center;
         }
+        #time { font-size: 32px; font-weight: 800; letter-spacing: 2px; }
+        #date-solar { font-size: 14px; opacity: 0.9; margin-top: 5px; font-weight: 600; }
+        #date-lunar { font-size: 13px; background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 20px; margin-top: 10px; }
 
-        .status-pill small { color: var(--sub-text); font-weight: 600; font-size: 11px; text-transform: uppercase; }
-        #stt { display: block; margin-top: 5px; font-weight: 700; color: var(--primary); font-size: 14px; }
-
-        /* INPUT CẢI TIẾN */
-        .input-box {
-            position: relative;
-            margin-bottom: 15px;
+        .status-box {
+            background: var(--pink-soft);
+            padding: 15px 20px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--pink-deep);
         }
+        .status-box small { font-size: 10px; text-transform: uppercase; color: var(--pink-deep); font-weight: 800; }
+        #stt { display: block; font-weight: 700; font-size: 14px; margin-top: 4px; }
 
         input[type="text"] {
             width: 100%;
-            padding: 16px 20px;
-            border-radius: var(--radius-md);
+            padding: 16px 25px;
+            border-radius: 30px;
             border: 2px solid transparent;
-            background: #fff;
-            box-shadow: var(--shadow);
+            background: #f8f9fa;
             box-sizing: border-box;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             transition: 0.3s;
-            color: var(--text);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
-
         input[type="text"]:focus {
-            border-color: var(--primary);
+            background: white;
+            border-color: var(--pink-deep);
             outline: none;
-            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 45, 85, 0.1);
         }
 
-        .btn-action {
+        .btn-start {
             width: 100%;
             padding: 16px;
-            border-radius: var(--radius-md);
+            border-radius: 30px;
             border: none;
-            background: var(--text);
+            background: var(--text-main);
             color: white;
-            font-weight: 700;
-            font-size: 14px;
+            font-weight: 800;
+            margin-top: 15px;
             cursor: pointer;
             transition: 0.3s;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+        .btn-start:hover { transform: translateY(-3px); background: #000; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
 
-        .btn-action:hover { background: #000; transform: translateY(-2px); box-shadow: 0 15px 25px rgba(0,0,0,0.15); }
-
-        /* TOGGLE BUTTONS CỰC ĐẸP */
-        .config-section { margin-top: 35px; }
-        .config-title { font-size: 12px; font-weight: 800; color: var(--sub-text); margin-bottom: 15px; padding-left: 5px; }
-        
+        /* TOGGLE CARDS */
+        .toggle-container { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .toggle-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid #f1f1f1;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            background: white;
-            padding: 14px 18px;
-            border-radius: 16px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(0,0,0,0.02);
+            gap: 10px;
             transition: 0.3s;
         }
+        .toggle-card:hover { border-color: var(--pink-deep); }
+        .toggle-card span { font-size: 12px; font-weight: 700; color: var(--sub-text); }
 
-        .toggle-card:hover { transform: scale(1.02); box-shadow: var(--shadow); }
-        .toggle-card span { font-size: 14px; font-weight: 600; color: #475569; }
-
-        /* CHAT LOG HIỆN ĐẠI */
+        /* MAIN CONTENT */
         .main {
             flex: 1;
             padding: 30px;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box;
+        }
+
+        .chat-wrapper {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            border: 1px solid white;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .chat-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 45, 85, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
         }
-
-        .chat-header h2 { margin: 0; font-weight: 800; font-size: 24px; letter-spacing: -1px; }
 
         #chat {
             flex: 1;
+            padding: 25px;
             overflow-y: auto;
-            padding-right: 15px;
             display: flex;
             flex-direction: column-reverse;
-            gap: 15px;
+            gap: 12px;
         }
 
-        .message-item {
+        .msg {
             display: flex;
-            gap: 15px;
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            flex-direction: column;
+            max-width: 80%;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
-        .msg-content {
+        .msg-bubble {
             background: white;
-            padding: 15px 20px;
-            border-radius: 20px;
+            padding: 12px 20px;
+            border-radius: 22px;
             border-bottom-left-radius: 4px;
-            box-shadow: var(--shadow);
-            max-width: 70%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid rgba(255,255,255,0.5);
         }
 
-        .msg-user { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 5px; display: block; }
-        .msg-text { font-size: 14px; line-height: 1.5; color: #334155; font-weight: 500; }
+        .msg-user {
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            margin-left: 5px;
+            color: var(--pink-deep);
+            text-transform: uppercase;
+        }
 
-        /* SWITCH UI */
-        .switch { position: relative; width: 44px; height: 24px; }
+        /* SWITCH STYLES */
+        .switch { position: relative; width: 34px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e2e8f0; border-radius: 34px; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input:checked + .slider { background: linear-gradient(135deg, #4ade80, #22c55e); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; border-radius: 30px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background-color: var(--pink-deep); }
+        input:checked + .slider:before { transform: translateX(14px); }
 
         .admin-link {
             margin-top: auto;
+            text-align: center;
             text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 18px;
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            color: var(--text);
+            color: var(--pink-deep);
             font-weight: 700;
             font-size: 13px;
+            padding: 15px;
+            border-radius: 20px;
+            background: var(--pink-soft);
             transition: 0.3s;
         }
-        .admin-link:hover { background: var(--text); color: #fff; }
+        .admin-link:hover { background: var(--pink-deep); color: white; }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--pink-light); border-radius: 10px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="brand">
-            <div class="brand-icon"><i class="fab fa-tiktok"></i></div>
-            <div class="brand-name">IDOL BÈO</div>
-        </div>
+        <div class="brand"><i class="fab fa-tiktok"></i> IDOL BÈO</div>
         
-        <div class="status-pill">
-            <small>Live Connection</small>
-            <span id="stt">Waiting for system...</span>
+        <div class="clock-widget">
+            <div id="time">00:00:00</div>
+            <div id="date-solar">Thứ Hai, 01/01/2024</div>
+            <div id="date-lunar">Âm lịch: Đang tính...</div>
         </div>
 
-        <div class="input-box">
-            <input type="text" id="user" placeholder="Nhập ID TikTok chủ live...">
+        <div class="status-box">
+            <small>Hệ thống TTS</small>
+            <span id="stt">Sẵn sàng vận hành</span>
         </div>
-        <button class="btn-action" onclick="start()">KẾT NỐI HỆ THỐNG</button>
 
-        <div class="config-section">
-            <div class="config-title">QUẢN LÝ CHẾ ĐỘ</div>
-            <div class="toggle-card"><span>Chào khách vào</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+        <div style="position: relative;">
+            <input type="text" id="user" placeholder="ID TikTok chủ live...">
+            <button class="btn-start" onclick="start()">Bắt đầu Live</button>
+        </div>
+
+        <div class="toggle-container">
+            <div class="toggle-card"><span>Chào khách</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
             <div class="toggle-card"><span>Cảm ơn quà</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
             <div class="toggle-card"><span>Trợ lý ảo</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
-            <div class="toggle-card"><span>Nhắc PK 20s</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
+            <div class="toggle-card"><span>Nhắc PK</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
         </div>
 
-        <a href="/admin" class="admin-link">
-            <i class="fas fa-layer-group"></i> CẤU HÌNH DỮ LIỆU
-        </a>
+        <a href="/admin" class="admin-link"><i class="fas fa-magic"></i> Tùy chỉnh kịch bản</a>
     </div>
 
     <div class="main">
-        <div class="chat-header">
-            <h2>Live Monitor</h2>
-            <div id="counter" style="background: var(--text); color: white; padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 800;">0 TIN NHẮN</div>
-        </div>
-        <div id="chat">
-            <div style="text-align: center; color: #94a3b8; margin-top: 100px;">
-                <i class="fas fa-radar fa-3x" style="margin-bottom: 20px; opacity: 0.2;"></i>
-                <p style="font-weight: 600;">Hệ thống đã sẵn sàng.<br>Vui lòng kết nối để bắt đầu quét.</p>
+        <div class="chat-wrapper">
+            <div class="chat-header">
+                <h3 style="margin:0; font-weight:800; color:var(--pink-deep)">Live Monitor</h3>
+                <span id="counter" style="background:var(--pink-deep); color:white; padding:5px 15px; border-radius:30px; font-size:11px; font-weight:800">0 TIN</span>
+            </div>
+            <div id="chat">
+                <div style="text-align: center; color: #a0a0a0; margin-top: 100px;">
+                    <i class="fas fa-heart fa-3x" style="color: var(--pink-soft); margin-bottom: 20px;"></i>
+                    <p>Hệ thống đang chờ tín hiệu từ TikTok Live...</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // --- XỬ LÝ ĐỒNG HỒ & NGÀY THÁNG ---
+        function updateClock() {
+            const now = new Date();
+            
+            // Giờ
+            document.getElementById('time').innerText = now.toLocaleTimeString('vi-VN', { hour12: false });
+            
+            // Dương lịch
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            document.getElementById('date-solar').innerText = now.toLocaleDateString('vi-VN', options);
+            
+            // Âm lịch (Tính toán đơn giản - Bạn có thể dùng thư viện chuyên sâu hơn nếu cần chính xác tuyệt đối)
+            // Ở đây tôi hiển thị placeholder, bạn có thể tích hợp thư viện amlich.js nếu muốn cụ thể
+            document.getElementById('date-lunar').innerText = "Chúc bạn một ngày livestream vui vẻ!";
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- LOGIC KẾT NỐI ---
         const socket = io();
         let queue = [], playing = false, count = 0;
 
@@ -277,7 +298,7 @@
         socket.on('status', m => {
             const stt = document.getElementById('stt');
             stt.innerText = m;
-            stt.style.color = m.includes('Đã kết nối') ? '#22c55e' : '#fe2c55';
+            stt.style.color = m.includes('Đã kết nối') ? '#2ecc71' : '#ff2d55';
         });
         
         socket.on('audio-data', d => {
@@ -285,22 +306,16 @@
             if(count === 0) chat.innerHTML = ''; 
 
             const div = document.createElement('div');
-            div.className = 'message-item';
+            div.className = 'msg';
             
-            let nameStyle = '';
-            if(d.type === 'gift') nameStyle = 'color: #fe2c55;';
-            if(d.type === 'bot') nameStyle = 'color: #0ea5e9;';
-
             div.innerHTML = `
-                <div class="msg-content">
-                    <span class="msg-user" style="${nameStyle}">${d.user}</span>
-                    <div class="msg-text">${d.comment}</div>
-                </div>
+                <div class="msg-user">${d.user}</div>
+                <div class="msg-bubble">${d.comment}</div>
             `;
             chat.prepend(div);
             
             count++;
-            document.getElementById('counter').innerText = `${count} TIN NHẮN`;
+            document.getElementById('counter').innerText = `${count} TIN`;
 
             if (d.audio) {
                 if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
