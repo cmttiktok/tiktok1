@@ -17,21 +17,17 @@
         body { font-family: 'Quicksand', sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; }
 
         .app-container { display: flex; height: 100vh; width: 100vw; }
-        
-        /* Sidebar PC */
         .left-side { width: 330px; display: flex; flex-direction: column; border-right: 2px solid var(--border); background: #fff; flex-shrink: 0; }
         .right-side { flex: 1; display: flex; flex-direction: column; padding: 15px; background: var(--bg); overflow: hidden; }
 
-        /* Đồng hồ & Nét đứt */
+        /* Đồng hồ & Bèo Google */
         .clock-box { background: linear-gradient(135deg, #ff85a2, #ffb3c6); color: white; padding: 15px; text-align: center; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(255,133,162,0.2); }
         #clock-time { font-size: 32px; font-weight: 700; line-height: 1; }
         #clock-date { font-size: 11px; font-weight: 700; margin: 5px 0; line-height: 1.4; }
         .brand-divider { border-top: 1.5px dashed rgba(255,255,255,0.6); margin: 8px auto; width: 80%; }
-        .brand { font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .brand { font-size: 14px; font-weight: 700; }
 
         .control-panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; }
-        
-        /* Kết nối & Avatar */
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .conn-row { display: flex; gap: 8px; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; }
@@ -40,26 +36,19 @@
         #stt-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); }
         #avatar-img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); display: none; object-fit: cover; }
 
-        /* Tốc độ đọc */
-        .speed-box { padding: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--border); }
-        input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
-
         /* Nút bấm đa màu */
         .sw-list { display: flex; flex-direction: column; gap: 8px; }
         .sw-item { background: white; border: 2px solid var(--border); padding: 12px 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
-        
         .sw-item.master { border-color: var(--error); color: var(--error); }
         .sw-item.pk { border-color: var(--color-pk); color: #0097a7; }
         .sw-item.welcome { border-color: var(--color-welcome); }
         .sw-item.gift { border-color: var(--color-gift); }
         .sw-item.bot { border-color: var(--color-bot); }
 
-        /* Switch Custom */
         .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #e0e0e0; transition: .4s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        
         input:checked + .slider:before { transform: translateX(18px); }
         .master input:checked + .slider { background: var(--error); }
         .pk input:checked + .slider { background: var(--color-pk); }
@@ -67,15 +56,14 @@
         .gift input:checked + .slider { background: var(--color-gift); }
         .bot input:checked + .slider { background: var(--color-bot); }
 
-        /* Nhật ký Live - Phân tách rõ ràng */
+        /* Nhật ký Live */
         .journal-header { background: white; padding: 12px 20px; border-radius: 20px 20px 0 0; border: 2px solid var(--border); border-bottom: none; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
         .journal-content { flex: 1; background: #fafafa; border: 2px solid var(--border); border-radius: 0 0 20px 20px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 12px; }
         
-        /* Thẻ bình luận */
         .msg-card { 
             background: white; padding: 12px 15px; border-radius: 18px; 
             border: 1px solid #f0f0f0; box-shadow: 0 4px 8px rgba(0,0,0,0.03);
-            max-width: 85%; align-self: flex-start; animation: fadeIn 0.3s ease;
+            max-width: 90%; align-self: flex-start; animation: fadeIn 0.3s ease;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .msg-card b { color: var(--primary); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 4px; }
@@ -83,10 +71,12 @@
 
         /* Tối ưu Mobile */
         @media (max-width: 768px) {
-            .app-container { flex-direction: column; height: auto; }
-            .left-side { width: 100%; border-right: none; }
-            .right-side { width: 100%; height: 60vh; padding: 10px; }
-            .sw-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .app-container { flex-direction: column; height: 100vh; overflow: hidden; }
+            .left-side { width: 100%; border-right: none; height: auto; flex-shrink: 0; }
+            /* Cập nhật chiều cao nhật ký mobile ~ 5 dòng */
+            .right-side { width: 100%; flex: 1; padding: 10px; overflow: hidden; height: 280px; } 
+            .journal-content { height: 100%; } 
+            .sw-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
             .sw-item.master { grid-column: span 2; }
             .clock-box { border-radius: 0; }
         }
@@ -106,32 +96,28 @@
         <div class="control-panel">
             <div class="box-conn">
                 <div class="conn-row">
-                    <input type="text" id="user" placeholder="ID TikTok Idol...">
+                    <input type="text" id="user" placeholder="ID TikTok...">
                     <button class="btn-conn" onclick="start()">KẾT NỐI</button>
                 </div>
                 <div id="stt-container">
                     <img id="avatar-img" src="" alt="">
-                    <span id="stt-text">✨ Hệ thống sẵn sàng</span>
+                    <span id="stt-text">✨ Sẵn sàng</span>
                 </div>
-            </div>
-
-            <div class="speed-box">
-                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
-                    <span>TỐC ĐỘ ĐỌC</span><span id="speed-val">1.2x</span>
-                </div>
-                <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)">
             </div>
 
             <div class="sw-list">
                 <div class="sw-item master"><span>TẮT HỆ THỐNG</span><label class="switch master"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label></div>
                 <div class="sw-item pk"><span>NHẮC PK 20S</span><label class="switch pk"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item welcome"><span>👋 CHÀO PHÒNG</span><label class="switch welcome"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item gift"><span>🎁 TẶNG QUÀ</span><label class="switch gift"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item bot"><span>🤖 BOT ĐÁP</span><label class="switch bot"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item welcome"><span>👋 CHÀO</span><label class="switch welcome"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item gift"><span>🎁 QUÀ</span><label class="switch gift"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item bot"><span>🤖 BOT</span><label class="switch bot"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
             </div>
 
-            <div style="text-align: center; margin-top: auto; padding-top: 20px;">
-                <a href="/admin" style="color: var(--primary); text-decoration: none; font-size: 11px; font-weight: 700; border: 1.5px solid var(--border); padding: 8px 15px; border-radius: 12px; background: white;">⚙️ QUẢN LÝ DỮ LIỆU</a>
+            <div style="padding: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--primary); margin-bottom: 5px;">
+                    <span>TỐC ĐỘ ĐỌC</span><span id="speed-val">1.2x</span>
+                </div>
+                <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)" style="width: 100%; accent-color: var(--primary);">
             </div>
         </div>
     </div>
@@ -149,7 +135,7 @@
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2, count = 0;
 
-    // --- 1. ĐỒNG HỒ & ÂM LỊCH CHÍNH XÁC ---
+    // --- ĐỒNG HỒ & ÂM LỊCH ---
     function updateClock() {
         const now = new Date();
         const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
@@ -157,8 +143,8 @@
         
         try {
             const lunar = LunarCalendar.solarToLunar(now.getFullYear(), now.getMonth() + 1, now.getDate());
-            const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
-            document.getElementById('clock-date').innerHTML = `${solarStr}<br>Âm lịch: ${lunar.lunarDay}/${lunar.lunarMonth}`;
+            const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}`;
+            document.getElementById('clock-date').innerHTML = `${solarStr} | ÂL: ${lunar.lunarDay}/${lunar.lunarMonth}`;
         } catch(e) { document.getElementById('clock-date').innerText = now.toLocaleDateString('vi-VN'); }
     }
     setInterval(updateClock, 1000); updateClock();
@@ -168,7 +154,7 @@
         currentSpeed = parseFloat(v);
     }
 
-    async function start() {
+    function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
         document.getElementById('stt-text').innerText = "Đang kết nối...";
@@ -186,7 +172,6 @@
     socket.on('audio-data', d => {
         if (!document.getElementById('masterToggle').checked) return;
 
-        // Phân tách cmt rõ ràng bằng Card
         const chat = document.getElementById('chat');
         const card = document.createElement('div');
         card.className = 'msg-card';
@@ -195,9 +180,8 @@
         
         count++; 
         document.getElementById('msg-count').innerText = `${count} TIN`;
-        if(chat.childNodes.length > 30) chat.removeChild(chat.lastChild);
+        if(chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
 
-        // Lọc đọc theo Switch
         if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
         if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
         if (d.type === 'pk' && !document.getElementById('pkToggle').checked) return;
