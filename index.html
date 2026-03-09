@@ -130,7 +130,6 @@
     const socket = io();
     let queue = [], playing = false, currentSpeed = 1.2, count = 0;
 
-    // --- CẬP NHẬT ĐỒNG HỒ GỘP DÒNG ---
     function updateClock() {
         const now = new Date();
         const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
@@ -144,7 +143,6 @@
         if (lMonth <= 0) lMonth = 12;
 
         const solarStr = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
-        // Hiển thị chung 1 dòng cách nhau bằng dấu -
         document.getElementById('clock-date').innerHTML = `${solarStr} - ÂL: ${lDay}/${lMonth}`;
     }
     setInterval(updateClock, 1000); updateClock();
@@ -165,19 +163,20 @@
         const sttText = document.getElementById('stt-text');
         const img = document.getElementById('avatar-img');
         
-        if (typeof d === 'string') {
-            sttText.innerText = d;
-        } else {
-            sttText.innerText = d.text || "Đã kết nối";
-            if(d.connected && d.avatar) {
+        // Khi nhận status thành công
+        if (typeof d === 'object' && d.connected) {
+            sttText.innerText = d.text || "Kết nối thành công";
+            if(d.avatar) {
                 img.src = d.avatar;
                 img.style.display = 'block';
-                // THÊM ÂM THANH KHI KẾT NỐI THÀNH CÔNG
-                const welcomeMsg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
-                const welcomeUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(welcomeMsg)}&tl=vi&client=tw-ob`;
-                queue.push(welcomeUrl);
-                if(!playing) play();
             }
+            // PHÁT ÂM THANH CHÀO MỪNG NGAY KHI CÓ AVATAR (KẾT NỐI XONG)
+            const msg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
+            const welcomeUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(msg)}&tl=vi&client=tw-ob`;
+            queue.push(welcomeUrl);
+            if(!playing) play();
+        } else {
+            sttText.innerText = d.text || d;
         }
     });
 
