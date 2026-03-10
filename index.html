@@ -23,25 +23,27 @@
         .control-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px; }
         
-        /* FIX NÚT KẾT NỐI */
+        /* FIX LỖI NÚT KẾT NỐI */
         .conn-row { display: flex; gap: 5px; width: 100%; }
-        input[type="text"] { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-family: 'Quicksand'; font-weight: 700; }
-        .btn-conn { background: var(--primary); color: white; border: none; padding: 0 12px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; }
+        input[type="text"] { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-weight: 700; }
+        .btn-conn { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; }
 
         #stt-container { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 10px; background: #fff8f9; border: 1px dashed var(--border); min-height: 35px; }
         .stt-success { color: var(--success) !important; border-color: var(--success) !important; background: #f1f8f1 !important; }
         .stt-error { color: var(--error) !important; border-color: var(--error) !important; background: #fff1f1 !important; }
 
-        .sw-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .sw-item { background: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-align: center; }
-        .sw-item.master { grid-column: span 2; flex-direction: row; justify-content: space-between; font-size: 11px; border-color: var(--error); color: var(--error); }
-        
-        .switch { position: relative; width: 34px; height: 18px; }
+        .sw-list { display: flex; flex-direction: column; gap: 6px; }
+        .sw-item { background: white; border: 1px solid var(--border); padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; }
+        .sw-item.master { border-color: var(--error); color: var(--error); }
+        .sw-item.pk { border-color: var(--pk); color: #00acc1; }
+
+        .switch { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background: var(--primary); }
         .master input:checked + .slider { background: var(--error); }
+        .pk input:checked + .slider { background: var(--pk); }
         input:checked + .slider:before { transform: translateX(16px); }
 
         .journal-header { background: white; padding: 10px 15px; border-radius: 15px 15px 0 0; border: 2px solid var(--border); border-bottom: none; font-weight: 700; color: var(--primary); font-size: 13px; }
@@ -50,8 +52,10 @@
 
         @media (max-width: 768px) {
             .app-container { flex-direction: column; height: 100vh; }
-            .left-side { width: 100%; border-right: none; }
-            .right-side { flex: 1; padding: 10px; }
+            .left-side { width: 100%; border-right: none; height: auto; }
+            .right-side { flex: 1; padding: 10px; overflow: hidden; }
+            .sw-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .sw-item.master { grid-column: span 2; }
         }
     </style>
 </head>
@@ -68,28 +72,28 @@
         <div class="control-panel">
             <div class="box-conn">
                 <div class="conn-row">
-                    <input type="text" id="user" placeholder="ID TikTok...">
+                    <input type="text" id="user" placeholder="Nhập ID TikTok...">
                     <button class="btn-conn" onclick="start()">KẾT NỐI</button>
                 </div>
                 <div id="stt-container">
                     <span id="stt-icon">✨</span>
-                    <span id="stt-text">Sẵn sàng kết nối</span>
+                    <span id="stt-text">Hệ thống sẵn sàng</span>
                 </div>
             </div>
 
             <div class="box-conn" style="padding: 10px;">
                 <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--primary); margin-bottom: 5px;">
-                    <span>TỐC ĐỘ</span><span id="speed-val">1.2x</span>
+                    <span>TỐC ĐỘ ĐỌC</span><span id="speed-val">1.2x</span>
                 </div>
                 <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)" style="width: 100%;">
             </div>
 
             <div class="sw-list">
                 <div class="sw-item master"><span>TẮT HỆ THỐNG</span><label class="switch master"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label></div>
+                <div class="sw-item pk"><span>NHẮC PK 20S</span><label class="switch pk"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
                 <div class="sw-item"><span>👋 CHÀO PHÒNG</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
                 <div class="sw-item"><span>🎁 TẶNG QUÀ</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
                 <div class="sw-item"><span>🤖 BOT ĐÁP</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item" style="border-color: var(--pk);"><span>⚔️ NHẮC PK</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
             </div>
         </div>
     </div>
@@ -106,12 +110,15 @@
 
     function updateClock() {
         const now = new Date();
+        const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
         document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
+        const d = now.getDate(), m = now.getMonth() + 1, y = now.getFullYear();
         const tet2026 = new Date(2026, 1, 17);
         const diff = Math.floor((now - tet2026) / 86400000);
-        let lDay = (diff % 30) + 1; let lMonth = (Math.floor(diff / 30) % 12) + 1;
+        let lDay = (diff % 30) + 1; 
+        let lMonth = (Math.floor(diff / 30) % 12) + 1;
         if (lDay <= 0) { lDay += 30; lMonth -= 1; }
-        document.getElementById('clock-date').innerText = `DL: ${now.getDate()}/${now.getMonth()+1} - ÂL: ${lDay}/${lMonth}`;
+        document.getElementById('clock-date').innerText = `${days[now.getDay()]}: ${d}/${m}/${y} - ÂL: ${lDay}/${lMonth}`;
     }
     setInterval(updateClock, 1000); updateClock();
 
@@ -120,20 +127,11 @@
         currentSpeed = parseFloat(v);
     }
 
-    // --- CHỐNG SPAM ICON & KÝ TỰ ---
-    function cleanSpam(text) {
-        // Rút gọn các ký tự lặp lại như "haaaaaa" -> "haaa"
-        let cleaned = text.replace(/(.)\1{3,}/g, '$1$1$1');
-        // Rút gọn icon lặp lại
-        cleaned = cleaned.replace(/([\uD800-\uDBFF][\uDC00-\uDFFF])\1{2,}/g, '$1$1');
-        return cleaned;
-    }
-
     function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
         
-        // Mở khóa âm thanh đơn giản
+        // Chỉ mồi âm thanh, không đọc voice kết nối để tránh kẹt
         new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=").play().catch(()=>{});
 
         document.getElementById('stt-icon').innerText = "⏳";
@@ -149,7 +147,7 @@
             sttBox.className = "stt-success";
         } else {
             document.getElementById('stt-icon').innerText = "❌";
-            document.getElementById('stt-text').innerText = "Lỗi, thử lại nha";
+            document.getElementById('stt-text').innerText = "Lỗi hệ thống, thử lại";
             sttBox.className = "stt-error";
         }
     });
@@ -157,7 +155,6 @@
     socket.on('audio-data', d => {
         if (!document.getElementById('masterToggle').checked) return;
 
-        // Nhật ký live
         const chat = document.getElementById('chat');
         const div = document.createElement('div');
         div.className = 'msg';
@@ -165,13 +162,13 @@
         chat.prepend(div);
         if(chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
 
-        // Lọc theo switch
         if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
         if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
         if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
 
         if (d.audio) {
-            // Đẩy vào hàng đợi
+            // LỌC SPAM: Rút gọn text trước khi đẩy vào queue nếu server gửi text, 
+            // Ở đây server gửi audio nên ta cứ đẩy vào hàng đợi bình thường.
             queue.push(d.audio);
             if(!playing) play();
         }
