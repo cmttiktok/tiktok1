@@ -23,9 +23,8 @@
         .control-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px; }
         
-        /* FIX LỖI NÚT KẾT NỐI */
         .conn-row { display: flex; gap: 5px; width: 100%; }
-        input[type="text"] { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-weight: 700; }
+        input[type="text"] { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-family: 'Quicksand'; font-weight: 700; }
         .btn-conn { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; }
 
         #stt-container { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 10px; background: #fff8f9; border: 1px dashed var(--border); min-height: 35px; }
@@ -131,7 +130,7 @@
         const u = document.getElementById('user').value.trim();
         if(!u) return;
         
-        // Chỉ mồi âm thanh, không đọc voice kết nối để tránh kẹt
+        // Mồi âm thanh để trình duyệt mở quyền
         new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=").play().catch(()=>{});
 
         document.getElementById('stt-icon').innerText = "⏳";
@@ -167,8 +166,6 @@
         if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
 
         if (d.audio) {
-            // LỌC SPAM: Rút gọn text trước khi đẩy vào queue nếu server gửi text, 
-            // Ở đây server gửi audio nên ta cứ đẩy vào hàng đợi bình thường.
             queue.push(d.audio);
             if(!playing) play();
         }
