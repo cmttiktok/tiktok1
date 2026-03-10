@@ -23,7 +23,7 @@
         .control-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
         .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px; }
         .conn-row { display: flex; gap: 5px; }
-        input[type="text"] { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-family: 'Quicksand'; font-weight: 700; }
+        input[type="text"] { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-weight: 700; }
         .btn-conn { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; }
 
         #stt-container { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 10px; background: #fff8f9; border: 1px dashed var(--border); min-height: 35px; }
@@ -75,7 +75,7 @@
                 </div>
                 <div id="stt-container">
                     <span id="stt-icon">✨</span>
-                    <span id="stt-text">Hệ thống sẵn sàng</span>
+                    <span id="stt-text">Sẵn sàng kết nối</span>
                 </div>
             </div>
 
@@ -124,23 +124,25 @@
         currentSpeed = parseFloat(v);
     }
 
-    // --- MỞ KHÓA ÂM THANH NGAY KHI CLICK ---
-    async function start() {
+    // --- HÀM CHỐNG SPAM KÝ TỰ VÀ ICON ---
+    function antiSpam(text) {
+        // Giới hạn các ký tự lặp lại liên tục (tối đa 3)
+        let cleaned = text.replace(/(.)\1{3,}/g, '$1$1$1');
+        // Giới hạn các dãy số dài (chống đọc số điện thoại/số tài khoản spam)
+        cleaned = cleaned.replace(/\d{5,}/g, (match) => match.substring(0, 3) + "...");
+        return cleaned;
+    }
+
+    function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
 
-        // Phát âm thanh im lặng để trình duyệt cấp phép Audio
-        const silence = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-        silence.play().then(() => {
-            console.log("Audio Unlocked");
-            // Nạp sẵn câu chào vào queue
-            const msg = "kết nối thành công bèo ơi, bắt đầu đọc comment";
-            queue.push(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(msg)}&tl=vi&client=tw-ob`);
-            if(!playing) play();
-        }).catch(() => {});
+        // Kích hoạt Audio context bằng âm thanh im lặng
+        new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=").play().catch(()=>{});
 
         document.getElementById('stt-icon').innerText = "⏳";
         document.getElementById('stt-text').innerText = "Đang kết nối...";
+        
         socket.emit('set-username', u);
     }
 
@@ -148,29 +150,19 @@
         const sttBox = document.getElementById('stt-container');
         if(m.includes('✅')) {
             document.getElementById('stt-icon').innerText = "✅";
-            document.getElementById('stt-text').innerText = "Đã kết nối thành công";
+            document.getElementById('stt-text').innerText = "Kết nối thành công";
             sttBox.className = "stt-success";
         } else {
             document.getElementById('stt-icon').innerText = "❌";
-            document.getElementById('stt-text').innerText = "Lỗi, thử lại nha";
+            document.getElementById('stt-text').innerText = "Thất bại, thử lại";
             sttBox.className = "stt-error";
-            const err = "Lỗi rồi bèo ơi, bấm lại nha";
-            queue.push(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(err)}&tl=vi&client=tw-ob`);
-            if(!playing) play();
-        }
-    });
-
-    socket.on('linkMicArmies', () => {
-        if (document.getElementById('pkToggle').checked) {
-            const pkMsg = "20 giây cuối thả bông lấy găng bèo ơi";
-            queue.push(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(pkMsg)}&tl=vi&client=tw-ob`);
-            if(!playing) play();
         }
     });
 
     socket.on('audio-data', d => {
         if (!document.getElementById('masterToggle').checked) return;
 
+        // Hiện nhật ký live
         const chat = document.getElementById('chat');
         const div = document.createElement('div');
         div.className = 'msg';
@@ -178,19 +170,17 @@
         chat.prepend(div);
         if(chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
 
-        const low = d.comment.toLowerCase();
-        if (document.getElementById('botToggle').checked && (low.includes("mấy giờ") || low.includes("âm lịch"))) {
-            const now = new Date();
-            let rep = low.includes("mấy giờ") ? `Bây giờ là ${now.getHours()} giờ ${now.getMinutes()} phút.` : `Hôm nay là ngày ${document.getElementById('clock-date').innerText.split('ÂL: ')[1]} âm lịch nha.`;
-            queue.push(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(rep)}&tl=vi&client=tw-ob`);
-        } else {
-            if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
-            if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
-            if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
-            if (d.audio) queue.push(d.audio);
-        }
+        // Xử lý đọc
+        if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
+        if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
+        if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
 
-        if(!playing) play();
+        if (d.audio) {
+            // Chống spam: Nếu comment quá dài hoặc lặp lại, ta sẽ can thiệp vào text (nếu server hỗ trợ)
+            // Ở đây ta dùng audio sẵn từ server, nên chỉ thêm vào hàng đợi
+            queue.push(d.audio);
+            if(!playing) play();
+        }
     });
 
     function play() {
