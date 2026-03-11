@@ -12,14 +12,22 @@ io.on('connection', (socket) => {
     socket.on('set-username', (user) => {
         if (tiktok) tiktok.disconnect();
         tiktok = new WebcastPushConnection(user);
-        tiktok.connect().then(s => socket.emit('status', {ok:true, profile: s.ownerInfo?.avatarThumb})).catch(e => socket.emit('status', {ok:false}));
+        
+        tiktok.connect().then(state => {
+            // Gửi avatar chủ phòng ngay khi kết nối thành công
+            socket.emit('status', { ok: true, profile: state.hostInfo?.avatarThumb || "" });
+        }).catch(err => socket.emit('status', { ok: false }));
 
-        tiktok.on('chat', (d) => {
-            io.emit('audio-data', { user: d.nickname, comment: d.comment, profile: d.profilePictureUrl, type: 'chat' });
+        // Bắt các sự kiện và định nghĩa 'type' rõ ràng cho Client xử lý
+        tiktok.on('chat', (data) => {
+            io.emit('audio-data', { user: data.nickname, comment: data.comment, profile: data.profilePictureUrl, type: 'chat' });
         });
-        tiktok.on('gift', (d) => {
-            io.emit('audio-data', { user: d.nickname, comment: `tặng ${d.giftName}`, profile: d.profilePictureUrl, type: 'gift' });
+        tiktok.on('gift', (data) => {
+            io.emit('audio-data', { user: data.nickname, comment: `tặng ${data.giftName}`, profile: data.profilePictureUrl, type: 'gift' });
+        });
+        tiktok.on('member', (data) => {
+            io.emit('audio-data', { user: data.nickname, comment: "vừa vào phòng", profile: data.profilePictureUrl, type: 'welcome' });
         });
     });
 });
-http.listen(process.env.PORT || 3000);
+http.listen(process.env.PORT || 3000, () => console.log('Server Live!'));
