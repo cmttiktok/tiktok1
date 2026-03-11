@@ -26,10 +26,9 @@
         input[type="text"] { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-weight: 700; font-family: 'Quicksand'; }
         .btn-conn { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; }
 
-        /* KHU VỰC THÔNG BÁO CÓ AVATAR */
-        #stt-container { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 700; padding: 6px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); min-height: 45px; }
-        .stt-success { color: var(--success) !important; border-color: var(--success) !important; background: #f1f8f1 !important; }
-        #host-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; display: none; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #stt-container { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 12px; background: #fff8f9; border: 1px dashed var(--border); min-height: 50px; transition: all 0.3s; }
+        .stt-success { color: var(--success) !important; border-color: var(--success) !important; background: #f1f8f1 !important; border-style: solid !important; }
+        #host-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; display: none; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         .sw-list { display: flex; flex-direction: column; gap: 6px; }
         .sw-item { background: white; border: 1px solid var(--border); padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; }
@@ -47,7 +46,6 @@
 
         .journal-header { background: white; padding: 10px 15px; border-radius: 15px 15px 0 0; border: 2px solid var(--border); border-bottom: none; font-weight: 700; color: var(--primary); font-size: 13px; }
         .journal-content { flex: 1; background: white; border: 2px solid var(--border); border-radius: 0 0 15px 15px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; gap: 8px; }
-        
         .msg { padding: 8px 12px; background: var(--bg); border-left: 4px solid var(--primary); border-radius: 10px; font-size: 13px; word-break: break-word; line-height: 1.4; }
 
         @media (max-width: 768px) {
@@ -108,7 +106,7 @@
 
     function updateClock() {
         const now = new Date();
-        const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+        const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
         document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
         const tet2026 = new Date(2026, 1, 17);
         const diff = Math.floor((now - tet2026) / 86400000);
@@ -123,35 +121,42 @@
     function start() {
         const u = document.getElementById('user').value.trim();
         if(!u) return;
-        document.getElementById('host-avatar').style.display = "none";
+        
+        // Reset trạng thái
+        const avatar = document.getElementById('host-avatar');
+        avatar.style.display = "none";
+        avatar.src = "";
+        document.getElementById('stt-container').className = "";
         document.getElementById('stt-text').innerText = "⏳ Đang kết nối...";
-        const silent = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-        silent.play().catch(()=>{});
+
+        // Kích hoạt âm thanh
+        new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=").play().catch(()=>{});
+        
         socket.emit('set-username', u);
     }
 
-    socket.on('status', m => {
-        const sttBox = document.getElementById('stt-container');
-        if(m.includes('✅') || m.toLowerCase().includes('success')) {
-            document.getElementById('stt-text').innerText = "Kết nối thành công";
+    // Luôn lắng nghe mọi gói tin đổ về để bật trạng thái
+    socket.onAny((eventName, data) => {
+        if (eventName === 'audio-data' || eventName === 'status') {
+            const sttBox = document.getElementById('stt-container');
+            const avatar = document.getElementById('host-avatar');
+            
+            // Đổi màu thành công
             sttBox.className = "stt-success";
+            document.getElementById('stt-text').innerText = "Kết nối thành công";
+
+            // Hiển thị avatar nếu có dữ liệu profile
+            if (data && data.profile && avatar.style.display === "none") {
+                avatar.src = data.profile;
+                avatar.style.display = "block";
+            }
         }
     });
 
     socket.on('audio-data', d => {
-        // Cập nhật Avatar của chủ phòng vào khung thông báo
-        const hostImg = document.getElementById('host-avatar');
-        const sttBox = document.getElementById('stt-container');
-        
-        if (hostImg.style.display === "none" && d.profile) {
-            hostImg.src = d.profile;
-            hostImg.style.display = "block";
-            document.getElementById('stt-text').innerText = "Kết nối thành công";
-            sttBox.className = "stt-success";
-        }
-
         if (!document.getElementById('masterToggle').checked) return;
 
+        // Nhật ký live
         const chat = document.getElementById('chat');
         const div = document.createElement('div');
         div.className = 'msg';
@@ -159,6 +164,7 @@
         chat.prepend(div);
         if(chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
 
+        // Lọc âm thanh
         if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
         if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
         if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
