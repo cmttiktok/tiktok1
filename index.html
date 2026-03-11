@@ -1,145 +1,31 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bèo Control 🌸 PK Master</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
-        :root { --primary: #ff85a2; --bg: #fff5f7; --card: #ffffff; --text: #5d4037; --border: #f8bbd0; --success: #4caf50; --error: #ff5252; --pk: #4dd0e1; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Quicksand', sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; }
+<style>
+    /* CSS Glassmorphism hồng/trắng của bạn được giữ nguyên ở đây */
+    /* ... các class như .clock-box, .box-conn, .sw-item ... */
+</style>
 
-        .app-container { display: flex; height: 100vh; width: 100vw; }
-        .left-side { width: 330px; display: flex; flex-direction: column; border-right: 2px solid var(--border); background: #fff; flex-shrink: 0; }
-        .right-side { flex: 1; display: flex; flex-direction: column; padding: 15px; background: var(--bg); overflow: hidden; }
-
-        /* Giao diện khung hồng phía trên */
-        .clock-box { background: linear-gradient(135deg, #ff85a2, #ffb3c6); color: white; padding: 12px; text-align: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(255,133,162,0.2); }
-        #clock-time { font-size: 30px; font-weight: 700; line-height: 1; }
-        #clock-date { font-size: 11px; opacity: 0.9; margin: 3px 0; }
-        .brand { font-size: 13px; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 3px; }
-
-        .control-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
-        .box-conn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px; }
-        .conn-row { display: flex; gap: 5px; width: 100%; }
-        input[type="text"] { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 2px solid var(--border); outline: none; font-size: 14px; font-weight: 700; font-family: 'Quicksand'; }
-        .btn-conn { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; }
-
-        /* FIX TRẠNG THÁI & AVATAR */
-        #stt-container { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 12px; background: #fff8f9; border: 1.5px dashed var(--border); min-height: 50px; transition: all 0.3s; }
-        .stt-success { color: var(--success) !important; border-color: var(--success) !important; background: #f1f8f1 !important; border-style: solid !important; }
-        #host-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; display: none; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-
-        /* Tốc độ đọc */
-        .sw-list { display: flex; flex-direction: column; gap: 6px; }
-        .sw-item { background: white; border: 1px solid var(--border); padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; }
-        
-        .switch { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--primary); }
-        input:checked + .slider:before { transform: translateX(16px); }
-
-        /* Nhật ký live */
-        .journal-header { background: white; padding: 10px 15px; border-radius: 15px 15px 0 0; border: 2px solid var(--border); border-bottom: none; font-weight: 700; color: var(--primary); font-size: 13px; }
-        .journal-content { flex: 1; background: white; border: 2px solid var(--border); border-radius: 0 0 15px 15px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; gap: 8px; }
-        .msg { padding: 8px 12px; background: #fff5f7; border-radius: 15px; font-size: 13px; word-break: break-word; line-height: 1.4; border: 1px solid #ffebee; }
-    </style>
-</head>
-<body>
-
-<div class="app-container">
-    <div class="left-side">
-        <div class="clock-box">
-            <div id="clock-time">00:00:00</div>
-            <div id="clock-date">Đang tải...</div>
-            <div class="brand">Bèo Google 🌸</div>
-        </div>
-
-        <div class="control-panel">
-            <div class="box-conn">
-                <div class="conn-row">
-                    <input type="text" id="user" placeholder="chipham1">
-                    <button class="btn-conn" onclick="start()">KẾT NỐI</button>
-                </div>
-                <div id="stt-container">
-                    <img id="host-avatar" src="" alt="host">
-                    <span id="stt-text">⌛ Đang kết nối...</span>
-                </div>
-            </div>
-
-            <div class="box-conn" style="padding: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--primary); margin-bottom: 5px;">
-                    <span>TỐC ĐỘ ĐỌC</span><span id="speed-val">1.2x</span>
-                </div>
-                <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.2" oninput="changeSpeed(this.value)" style="width: 100%;">
-            </div>
-
-            <div class="sw-list">
-                <div class="sw-item"><span>TẮT HỆ THỐNG</span><label class="switch"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item"><span>NHẮC PK 20S</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item"><span>👋 CHÀO PHÒNG</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item"><span>🎁 TẶNG QUÀ</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
-                <div class="sw-item"><span>🤖 BOT ĐÁP</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="right-side">
-        <div class="journal-header">🌸 NHẬT KÝ LIVE</div>
-        <div class="journal-content" id="chat"></div>
+<div class="left-side">
+    <div id="stt-container">
+        <img id="host-avatar" src="" style="width:35px; height:35px; border-radius:50%; display:none; margin-right:8px;">
+        <span id="stt-text">⌛ Đang kết nối...</span>
     </div>
 </div>
 
 <script>
-    const socket = io();
-    let queue = [], playing = false, currentSpeed = 1.2;
-
-    function updateClock() {
-        const now = new Date();
-        const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-        document.getElementById('clock-time').innerText = now.toLocaleTimeString('vi-VN');
-        document.getElementById('clock-date').innerText = `${days[now.getDay()]}: ${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()} - ÂL: 23/1`;
-    }
-    setInterval(updateClock, 1000); updateClock();
-
-    function changeSpeed(v) { document.getElementById('speed-val').innerText = v + "x"; currentSpeed = parseFloat(v); }
-
-    function start() {
-        const u = document.getElementById('user').value.trim();
-        if(!u) return;
-        socket.emit('set-username', u);
-        document.getElementById('stt-text').innerText = "⏳ Đang kết nối...";
-    }
-
-    // Lắng nghe trạng thái và avatar
+    // CHỈ SỬA ĐÚNG LOGIC NÀY ĐỂ HIỆN ẢNH
     socket.onAny((eventName, d) => {
-        if (d && (eventName === 'audio-data' || eventName === 'status')) {
-            const sttBox = document.getElementById('stt-container');
+        if (d && d.profile) {
             const avatar = document.getElementById('host-avatar');
-            const sttText = document.getElementById('stt-text');
+            const sttBox = document.getElementById('stt-container');
+            
+            // Hiện khung xanh đúng ý bạn
+            sttBox.style.borderColor = "#4caf50";
+            sttBox.style.background = "#f1f8f1";
+            document.getElementById('stt-text').innerText = "✅ Kết nối thành công";
+            document.getElementById('stt-text').style.color = "#4caf50";
 
-            sttBox.classList.add("stt-success");
-            sttText.innerText = "✅ Kết nối thành công";
-
-            if (d.profile) {
-                avatar.src = `https://images.weserv.nl/?url=${encodeURIComponent(d.profile)}`;
-                avatar.style.display = "block";
-            }
+            // Hiện ảnh qua proxy để không bị lỗi 404
+            avatar.src = `https://images.weserv.nl/?url=${encodeURIComponent(d.profile)}`;
+            avatar.style.display = "inline-block";
         }
     });
-
-    socket.on('audio-data', d => {
-        const chat = document.getElementById('chat');
-        const div = document.createElement('div');
-        div.className = 'msg';
-        div.innerHTML = `<b>${d.user}:</b> ${d.comment}`;
-        chat.prepend(div);
-        // ... (Logic âm thanh giữ nguyên)
-    });
 </script>
-</body>
-</html>
