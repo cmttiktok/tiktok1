@@ -20,7 +20,7 @@ const Acronym = mongoose.model('Acronym', { key: String, value: String });
 const EmojiMap = mongoose.model('EmojiMap', { icon: String, text: String });
 const BotAnswer = mongoose.model('BotAnswer', { keyword: String, response: String });
 
-// --- API QUẢN TRỊ (Giữ nguyên) ---
+// --- GIỮ NGUYÊN TOÀN BỘ API QUẢN TRỊ CỦA BẠN ---
 app.get('/api/words', async (req, res) => res.json((await BannedWord.find()).map(w => w.word)));
 app.post('/api/words', async (req, res) => {
     const word = req.body.word ? req.body.word.toLowerCase().trim() : "";
@@ -82,41 +82,29 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 io.on('connection', (socket) => {
     let tiktok;
-    let pkTimer = null; // Bộ đếm PK độc lập
+    let pkTimer = null; 
 
     socket.on('set-username', (username) => {
         if (tiktok) tiktok.disconnect();
         tiktok = new WebcastPushConnection(username, { processInitialData: false });
-        
-        tiktok.connect().then(() => socket.emit('status', `Đã kết nối: ${username}`)).catch(e => socket.emit('status', `Lỗi: ${e.message}`));
+        tiktok.connect().then(() => socket.emit('status', `Đã kết nối: ${username}`));
 
-        // --- BÓC TÁCH LOGIC PK TỪ CODE CỦA BẠN ---
+        // --- CHỈ CẬP NHẬT LOGIC PK TẠI ĐÂY ---
         tiktok.on('linkMicBattle', (data) => {
-            // Kiểm tra trạng thái trận đấu bắt đầu (battleStatus = 1)
-            if (data.battleStatus === 1) {
-                console.log("🔥 PK Bắt đầu - Khởi động bộ đếm 280s");
+            if (data.battleStatus === 1) { // PK Bắt đầu
                 if (pkTimer) clearTimeout(pkTimer);
-
-                // Trận 5 phút (300s). Nhắc vào 20s cuối => Chờ 280s (280000ms)
+                // Đợi 280 giây (trận 5 phút) để nhắc vào 20 giây cuối
                 pkTimer = setTimeout(async () => {
-                    const textRemind = "thả bông 20 giây cuối bèo ơi";
-                    const audio = await getGoogleAudio(textRemind);
-                    socket.emit('audio-data', { 
-                        type: 'pk', 
-                        user: "HỆ THỐNG", 
-                        comment: "NHẮC PK 20S", 
-                        audio: audio 
-                    });
+                    const audio = await getGoogleAudio("thả bông 20 giây cuối bèo ơi");
+                    socket.emit('audio-data', { type: 'pk', user: "HỆ THỐNG", comment: "NHẮC PK 20S", audio });
                 }, 280000); 
             }
-            
-            // Nếu trận đấu kết thúc sớm hoặc bị hủy
             if (data.battleStatus === 0 || data.battleStatus === 3) {
                 if (pkTimer) { clearTimeout(pkTimer); pkTimer = null; }
             }
         });
 
-        // --- CÁC SỰ KIỆN KHÁC (Giữ nguyên) ---
+        // --- CÁC SỰ KIỆN KHÁC GIỮ NGUYÊN ---
         tiktok.on('chat', async (data) => {
             if (await isBanned(data.nickname)) return;
             const botRules = await BotAnswer.find();
@@ -151,5 +139,4 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server chạy tại cổng ${PORT}`));
+server.listen(process.env.PORT || 3000);
