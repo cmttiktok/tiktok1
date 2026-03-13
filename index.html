@@ -5,7 +5,7 @@
     <title>IDOL BÈO - HỆ THỐNG TTS</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* Giữ nguyên toàn bộ CSS của bạn */
+        /* GIỮ NGUYÊN GIAO DIỆN ĐEN GỐC CỦA BẠN */
         :root { --main: #fe2c55; --bg: #121212; --panel: #1e1e1e; }
         body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; gap: 20px; height: 100vh; box-sizing: border-box; }
         .column { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid #333; display: flex; flex-direction: column; }
@@ -49,7 +49,7 @@
         <div id="tab-acr-ui" style="display:none;"><input type="text" id="acr-key" placeholder="Viết tắt"><input type="text" id="acr-val" placeholder="Dịch"><button onclick="addAcr()">THÊM</button><div class="list-box" id="acr-list"></div></div>
         <div id="tab-emo-ui" style="display:none;"><input type="text" id="emo-icon" placeholder="Icon"><input type="text" id="emo-text" placeholder="Đọc"><button onclick="addEmo()">THÊM</button><div class="list-box" id="emo-list"></div></div>
         <div id="tab-bot-ui" style="display:none;">
-            <input type="text" id="bot-key" placeholder="Khách hỏi..."><input type="text" id="bot-res" placeholder="Google trả lời..."><button onclick="addBot()">THÊM KỊCH BẢN</button><div class="list-box" id="bot-list"></div>
+            <input type="text" id="bot-key" placeholder="Khách hỏi..."><input type="text" id="bot-res" placeholder="Trả lời..."><button onclick="addBot()">THÊM</button><div class="list-box" id="bot-list"></div>
         </div>
     </div>
 
@@ -57,13 +57,14 @@
         const socket = io();
         let queue = [], playing = false;
 
-        // --- CÁC HÀM QUẢN LÝ DATA (Giữ nguyên) ---
         function switchTab(t) {
             ['ban','acr','emo','bot'].forEach(tab => { 
                 document.getElementById(`tab-${tab}-ui`).style.display = tab === t ? 'block' : 'none'; 
                 document.getElementById(`btn-${tab}`).classList.toggle('tab-active', tab === t); 
             });
         }
+
+        // --- CÁC HÀM API GIỮ NGUYÊN ---
         async function loadData() {
             const words = await (await fetch('/api/words')).json();
             document.getElementById('word-list').innerHTML = words.map(w => `<div class="msg"><span>${w}</span><span onclick="delWord('${w}')" style="color:red;float:right;cursor:pointer;">X</span></div>`).join('');
@@ -74,6 +75,8 @@
             const bots = await (await fetch('/api/bot')).json();
             document.getElementById('bot-list').innerHTML = bots.map(b => `<div class="msg"><span>Hỏi: ${b.keyword} ➔ TL: ${b.response}</span><span onclick="delBot('${b._id}')" style="color:red;float:right;cursor:pointer;">X</span></div>`).join('');
         }
+
+        // ... (Các hàm addBot, delBot, addWord... giữ nguyên cấu trúc cũ của bạn) ...
         async function addBot() { await fetch('/api/bot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({keyword: document.getElementById('bot-key').value, response: document.getElementById('bot-res').value}) }); loadData(); }
         async function delBot(id) { await fetch(`/api/bot/${id}`, { method: 'DELETE' }); loadData(); }
         async function addWord() { await fetch('/api/words', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({word: document.getElementById('new-word').value}) }); loadData(); }
@@ -86,32 +89,25 @@
         function start() { socket.emit('set-username', document.getElementById('user').value); }
         socket.on('status', m => document.getElementById('stt').innerText = m);
 
-        // --- XỬ LÝ NHẬN TÍN HIỆU ÂM THANH ---
         socket.on('audio-data', d => {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div'); div.className = 'msg';
+            div.innerHTML = `<b style="color:#fe2c55">${d.user}:</b> ${d.comment}`;
+            chat.prepend(div);
             if (d.audio) {
-                // Kiểm tra các công tắc bật/tắt
+                // CHỈ ĐỌC KHI CÔNG TẮC BẬT
                 if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
                 if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
                 if (d.type === 'pk' && !document.getElementById('pkToggle').checked) return;
                 if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
-
-                // Hiện nhật ký
-                const chat = document.getElementById('chat');
-                const div = document.createElement('div'); div.className = 'msg';
-                div.innerHTML = `<b style="color:#fe2c55">${d.user}:</b> ${d.comment}`;
-                chat.prepend(div);
-
-                queue.push(d.audio); 
-                if (!playing) play();
+                queue.push(d.audio); if (!playing) play();
             }
         });
 
         function play() {
             if (!queue.length) { playing = false; return; }
-            playing = true; 
-            const a = new Audio(queue.shift());
-            a.onended = () => setTimeout(play, 300); 
-            a.play().catch(() => play());
+            playing = true; const a = new Audio(queue.shift());
+            a.onended = () => setTimeout(play, 300); a.play().catch(() => play());
         }
         loadData();
     </script>
